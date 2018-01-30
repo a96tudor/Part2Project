@@ -6,4 +6,4 @@
 
 match (m:Machine)
 where m.external
-return m
+return distinct m.uuid

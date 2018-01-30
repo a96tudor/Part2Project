@@ -22,16 +22,32 @@ class DatabaseDriver:
             http_port=port
         )
 
+        self._NODES_OF_INTEREST = [
+            'File', 'Process', 'Socket', 'Machine'
+        ]
+
     def execute_query(self, query):
         """
 
         :param query:       The query we want to execute
 
-        :return:        #TODO: FILL THIS IN
+        :return:            The query results, as a list
         """
         results = list(self._graph.data(query))
 
         return results
 
     def get_all_ids(self, rules_path):
-        return None
+        """
+            Method that takes the rules from a given path and gets the IDs corresponding to
+        their results.
+
+        :param rules_path:      The path for the rule-files
+        :return:                A dictionary with the following structure:
+
+                            {
+                                'File': <list of IDs of the files of interest>,
+                                'Socket': <list of IDs of the Sockets of interest>,
+
+                            }
+        """

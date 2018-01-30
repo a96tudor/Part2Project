@@ -1,0 +1,33 @@
+FEATURES = [
+    'NODE_TYPE',
+    'NEIGH_TYPE',
+    'EDGE_TYPE',
+    'WEB_CONN',
+    'NEIGH_WEB_CONN',
+    'UID_STS',
+    'GID_STS',
+    'VERSION',
+    'SUSPICIOUS',
+    'EXTERNAL'
+]
+
+NODE_EDGE_CODES = {
+    'Process': {
+        'code': 1,
+        'BIN': 1,
+        'CLIENT': 2,
+        'SERVER': 3,
+        'RaW': 4
+    },
+    'File': {
+        'code': 2,
+        'BIN': 1
+    },
+    'Socket': {
+        'code': 3,
+        'CLIENT': 1,
+        'SERVER': 2,
+        'RaW': 3
+    }
+}
+

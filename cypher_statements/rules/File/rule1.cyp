@@ -1,9 +1,7 @@
 /**
-
     ======= RULE #1 =========
 
     File downloaded from the web and executed
-
 */
 
 match (s:Socket)-[sp:PROC_OBJ]->(p1:Process)<-[fp1:PROC_OBJ]-(f:File)-[fp2:PROC_OBJ]->(p2:Process)
