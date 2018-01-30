@@ -1,4 +1,5 @@
 from py2neo import Graph, Node
+import os
 
 
 class DatabaseDriver:
@@ -30,9 +31,7 @@ class DatabaseDriver:
         """
         results = list(self._graph.data(query))
 
-        nodes_list = list()
+        return results
 
-
-
-
-
+    def get_all_ids(self, rules_path):
+        return None
