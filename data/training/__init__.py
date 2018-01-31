@@ -28,6 +28,16 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
                         usrname=db_usrname,
                         passwd=db_passwd)
 
+    rule_files = os.listdir(rules_path)
+
+    for node in cnst.RULES:
+        if node == 'File':
+            for rule in cnst.RULES[node]:
+                if rule+".cyp" in rule_files:
+                    with open(rules_path+rule+'.cyp', 'r') as f:
+                        query = f.read()
+                        print(db.execute_query(query))
+
     print("DONE - Successful!")
 
     return True
