@@ -71,7 +71,68 @@ class RulesHandler:
 
         return 1 if len(results) > 0 else 0
 
-    def _process_get_BIN_file(self, p_uuid: str, p_timestamp: int):
+    def _file_get_closest_process(self, uuid: str, timestamp: int):
+        """
+
+                Method that gets the closest Process (i.e. based on the timestamp)
+
+        :param uuid:            Unique ID of the process
+        :param timestamp:       Used to identify a specific version of the file
+
+        :return:                A dictionary with the format:
+                                {
+                                    "uuid":         unique ID of the identified process,
+                                    "timestamp":    timestamp of the identified process,
+                                    "rel_sts":      type of the edge connecting them
+                                }
+
+                                Or None if no such Process
+        """
+        query = "match (f:File {uuid: '" + uuid + "', timestamp: " + str(timestamp) + "})-[rel:PROC_OBJ]->(p:Process) " \
+                "return p.uuid as uuid, " \
+                        "p.timestamp as timestamp, " \
+                        "rel.state as rel_sts " \
+                    "order by abs(p.timestamp-f.timestamp) limit 1"
+
+        results = self._DB_DRIVER.execute_query(query)
+
+        if len(results) == 0:
+            return None
+
+        return results[0]
+
+    def _socket_get_closest_process(self, uuid: str, timestamp: int):
+        """
+
+                        Method that gets the closest Process (i.e. based on the timestamp)
+
+        :param uuid:            Unique ID of the process
+        :param timestamp:       Used to identify a specific version of the file
+
+        :return:                A dictionary with the format:
+                                {
+                                       "uuid":         unique ID of the identified process,
+                                        "timestamp":    timestamp of the identified process,
+                                        "rel_sts":      type of the edge connecting them
+                                }
+
+                                Or None if no such Process
+        """
+
+        query = "match (s:Socket {uuid: '" + uuid + "', timestamp: " + str(timestamp) + "})-[rel:PROC_OBJ]->(p:Process) " \
+                "return p.uuid as uuid, " \
+                        "p.timestamp as timestamp, " \
+                        "rel.state as rel_sts " \
+                    "order by abs(p.timestamp-s.timestamp) limit 1"
+
+        results = self._DB_DRIVER.execute_query(query)
+
+        if len(results) == 0:
+            return None
+
+        return results[0]
+
+    def _process_get_closest_neighbour(self, p_uuid: str, p_timestamp: int):
         """
 
                     Method returning the data for the BIN file of a given process
@@ -80,24 +141,59 @@ class RulesHandler:
         :param p_timestamp: The timestamp of the process we want to get the BIN file for
         :return:            A dict with the following structure:
                                 {
-                                    'NEIGH_TYPE': <The neighbour code>,
-                                    'EDGE_TYPE': <The edge code connecting to the neighbour>,
-                                    'NEIGH_WEB_CONN': <Whether the corresponding file was downloaded from the web>
+                                    'type': Type of node. Can be either File or Socket
+                                    'uuid': Unique ID of the neighbour
+                                    'timestamp': Timestamp of the neighbour,
+                                    'rel_sts': <Whether the corresponding file was downloaded from the web>
                                 }
         """
-        query = 'match (f:File)-[:PROC_OBJ {state: "BIN"}]->(p:Process {uuid: "' + p_uuid + '", ' \
-                                                                        'timestamp: ' + str(p_timestamp) + '})' \
-                'return f.uuid, f.timestamp'
+        query_file = 'match (f:File)-[rel:PROC_OBJ]->(p:Process {uuid: "' + p_uuid + '", ' \
+                                                            'timestamp: ' + str(p_timestamp) + '})' \
+                'return f.uuid as uuid, f.timestamp as timestamp, rel.state as rel_sts, ' \
+                            'abs(f.timestamp - p.timestamp) as diff' \
+                    'order by abs(f.timestamp - p.timestamp) limit 1'
 
-        results = self._DB_DRIVER.execute_query(query)
+        query_socket = 'match (s:Socket)-[rel:PROC_OBJ]->(p:Process {uuid: "' + p_uuid + '", ' \
+                                                            'timestamp: ' + str(p_timestamp) + '})' \
+                'return s.uuid as uuid, s.timestamp as timestamp, rel.state as rel_sts, ' \
+                            'abs(s.timestamp - p.timestamp) as diff' \
+                    'order by abs(s.timestamp - p.timestamp) limit 1'
+
+        closest_file = self._DB_DRIVER.execute_query(query_file)
+        closest_socket = self._DB_DRIVER.execute_query(query_socket)
+
+        if len(closest_file) == 0 and len(closest_socket) == 0:
+            return 0
+
+        if len(closest_file) == 0:
+            return {
+                'uuid': closest_socket[0]['uuid'],
+                'timestamp': closest_socket[0]['timestamp'],
+                'rel_sts': closest_socket[0]['rel_sts'],
+                'type': 'Socket'
+            }
+
+        if len(closest_socket) == 0:
+            return {
+                'uuid': closest_file[0]['uuid'],
+                'timestamp': closest_file[0]['timestamp'],
+                'rel_sts': closest_file[0]['rel_sts'],
+                'type': 'File'
+            }
 
         return {
-          'NEIGH_TYPE': cnts.NODE_EDGE_CODES['File']['code'],
-          'EDGE_TYPE': cnts.NODE_EDGE_CODES['File']['BIN'],
-          'NEIGH_WEB_CONN': self._file_is_from_the_web(
-              results[0]['f.uuid'],
-              results[0]['f.timestamp']
-          )
+          'uuid': closest_file[0]['uuid']
+                    if closest_file[0]['diff'] < closest_socket[0]['diff']
+                    else closest_socket[0]['uuid'],
+
+          'timestamp': closest_file[0]['timestamp']
+                        if closest_file[0]['diff'] < closest_socket[0]['diff']
+                        else closest_socket[0]['timestamp'],
+
+          'rel_sts': closest_file[0]['uuid'] if closest_file[0]['diff'] < closest_socket[0]['diff'] else
+            closest_socket[0]['uuid'],
+
+          'type': 'File' if closest_file[0]['diff'] < closest_socket[0]['diff'] else 'Socket'
         }
 
     def _file_is_suspicious(self, uuid:str, timestamp: int):
@@ -201,6 +297,109 @@ class RulesHandler:
 
         return 1 if results[0]['uid_sts'] else 0, \
                1 if results[0]['gid_sts'] else 0
+
+    def _socket_is_external(self, uuid: str, timestamp: int):
+        """
+                    Method that checks whether a given Socket connects to a different machine or not
+
+        :param uuid:                ID of the Socket in question
+        :param timestamp:           Timestamp representing a given version of the Socket
+
+        :return:                    1 - if external
+                                    0 - otherwise
+        """
+
+        query = 'match (s:Socket {uuid: "' + uuid + '", timestamp: ' + str(timestamp) + '}) ' \
+                'return not s.name[0]=~"127.0.0.1.*" as external'
+
+        result = self._DB_DRIVER.execute_query(query)
+
+        if len(result) == 0:
+            return 0
+
+        if result[0]['external']:
+            return 1
+        else:
+            return 0
+
+    def _get_all_nodes(self):
+        """
+            Method that returns all the nodes in the database, excluding: 'Machine', 'Meta' and 'Pipe' nodes
+
+        :return:        {
+                            "File":         List of dictionaries containing the return values of the query,
+                            "Process":      List of dictionaries containing the return values of the query,
+                            "Socket":       List of dictionaries containing the return values of the query
+                        }
+        """
+        query_file = 'match (f: File) ' \
+                     'return f.uuid as uuid, f.timestamp as timestamp'
+
+        query_process = 'match (p:Process) ' \
+                        'return p.uuid as uuid, p.timestamp as timestamp'
+
+        query_socket = 'match (s:Socket) ' \
+                       'return s.uuid as uuid, s.timestamp as timestamp'
+
+        return {
+            "File": self._DB_DRIVER.execute_query(query_file),
+            "Process": self._DB_DRIVER.execute_query(query_process),
+            "Socket": self._DB_DRIVER.execute_query(query_socket)
+        }
+
+    def _get_0_row(self, node: dict, neighbour: dict):
+        """
+
+        :param node:            The current node. Needs to have the following format:
+                                {
+                                    'type': The type of node. Can be either File, Process or Socket,
+                                    'uuid': Unique ID of the node,
+                                    'timestamp': Timestamp of the node version
+                                }
+        :param neighbour:       The neighbour. Same format as 'node', but with a new key: 'rel_sts'
+
+        :return:                A dictionary, representing a new row in the training set
+        """
+
+        check_if_connected = {
+            'File': self._file_is_from_the_web,
+            'Process': self._process_is_connected,
+            'Socket': self._socket_is_external
+        }
+
+        check_if_suspicious = {
+            'File': self._file_is_suspicious,
+            'Process': self._process_is_suspicious
+        }
+
+        check_if_external = {
+            'File': self._file_is_external,
+            'Process': self._process_is_connected,
+            'Socket': self._socket_is_external
+        }
+
+        if node['type'] == 'Process':
+            uid_sts, gid_sts = self._get_process_IDs_status(node['uid'], node['timestamp'])
+        else:
+            uid_sts, gid_sts = self._get_process_IDs_status(neighbour['uid'], neighbour['timestamp'])
+
+        return {
+            cnts.FEATURES[0]: node['uuid'],
+            cnts.FEATURES[1]: node['timestamp'],
+            cnts.FEATURES[2]: cnts.NODE_EDGE_CODES[node['type']]['code'],
+            cnts.FEATURES[3]: cnts.NODE_EDGE_CODES[neighbour['type']]['code'],
+            cnts.FEATURES[4]: cnts.NODE_EDGE_CODES[node['type']][neighbour['rel_sts']],
+            cnts.FEATURES[5]: check_if_connected[node['type']](node['uuid'], node['timestamp']),
+            cnts.FEATURES[6]: check_if_connected[neighbour['type']](neighbour['uuid'], neighbour['timestamp']),
+            cnts.FEATURES[7]: uid_sts,
+            cnts.FEATURES[8]: gid_sts,
+            cnts.FEATURES[9]: self._get_version_number(node['uuid'], node['timestamp']),
+            cnts.FEATURES[10]: self._process_is_suspicious(neighbour['uuid'], neighbour['timestamp'])
+                                    if node['type'] == 'Socket'
+                                    else check_if_suspicious[node['type']](node['uuid'], node['timestamp']),
+            cnts.FEATURES[11]: check_if_external[node['type']](node['uuid'], node['timestamp']),
+            cnts.FEATURES[12]: 0        # They are 0-labeled
+        }
 
     def get_entries_rule_1(self, results: list):
         """
@@ -499,3 +698,67 @@ class RulesHandler:
             rows_list.append(new_row)
 
         return pd.DataFrame(rows_list)
+
+    def get_0_labels(self):
+        """
+            Method that gets the nodes '0' labels
+
+        :return:        A pd.Dataframe with the '0'-labeled nodes
+        """
+        all_rows = list()
+
+        all_nodes = self._get_all_nodes()
+
+        for file in all_nodes['File']:
+
+            if (file['uuid'], file['timestamp']) in self._LABEL_1_IDS:
+                # We already entered this node as a 'label 1' in the training set, so we skip it
+                continue
+
+            process = self._file_get_closest_process(file['uuid'], file['timestamp'])
+
+            process['type'] = 'Process'
+            file['type'] = 'File'
+
+            all_rows.append(
+                self._get_0_row(
+                    node=file,
+                    neighbour=process
+                )
+            )
+
+        for socket in all_nodes['Socket']:
+
+            if (socket['uuid'], socket['timestamp']) in self._LABEL_1_IDS:
+                # We already entered this node as a 'label 1' in the training set, so we skip it
+                continue
+
+            process = self._socket_get_closest_process(socket['uuid'], socket['timestamp'])
+
+            process['type'] = 'Process'
+            socket['type'] = 'Socket'
+
+            all_rows.append(
+                self._get_0_row(
+                    node=socket,
+                    neighbour=process
+                )
+            )
+
+        for process in all_nodes['Process']:
+
+            if (process['uuid'], process['timestamp']) in self._LABEL_1_IDS:
+                # We already entered this node as a 'label 1' in the training set, so we skip it
+                continue
+
+            closest_node = self._process_get_closest_neighbour(process['uuid'], process['timestamp'])
+
+            process['type'] = 'Process'
+
+            all_rows.append(
+                self._get_0_row(
+                    node=process,
+                    neighbour=closest_node
+                )
+            )
+            
