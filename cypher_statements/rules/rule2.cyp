@@ -7,4 +7,4 @@
 
 match (s:Socket)-[c:PROC_OBJ]->(p:Process)
 where c.state='SERVER' and (not s.name[0] =~'127.0.0.1.*/')
-return distinct p.uuid
+return distinct p.uuid, p.timestamp, s.uuid, s.timestamp

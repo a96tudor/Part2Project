@@ -1,7 +1,9 @@
 from data.training import constants as cnst
 from data.training.database_driver import DatabaseDriver
+from data.training.rules_handler import RulesHandler
 import pandas as pd, numpy as np
 import os
+
 
 
 def generate_training_set(host, port, db_usrname, db_passwd, rules_path, training_set_path):
@@ -28,23 +30,29 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
                         usrname=db_usrname,
                         passwd=db_passwd)
 
+    rh = RulesHandler(db_driver=db)
+
+    _CURRENT_RULES = {
+        'rule1': rh.get_entries_rule_1
+    }
+
     rule_files = os.listdir(rules_path)
 
-    def entries_for_rule_1(query_results):
-        """
+    for rule in _CURRENT_RULES:
+        with open(rules_path + rule + '.cyp') as f:
+            rule_query = f.read()
+            new_entries = _CURRENT_RULES[rule](db.execute_query(rule_query))
 
-        :param query_results:       The query results for rule1, as a list of dicts
-        :return:                    A pd.Dataframe with the new entries
-        """
+            ts = pd.concat([ts, new_entries])
 
-
-    for node in cnst.RULES:
-        if node == 'File':
-            for rule in cnst.RULES[node]:
-                if rule+".cyp" in rule_files:
-                    with open(rules_path+rule+'.cyp', 'r') as f:
-                        query = f.read()
-                        print(db.execute_query(query))
+    """"
+    with open("cypher_statements/rules/rule1.cyp") as f:
+        rule_query = f.read()
+        results = db.execute_query(rule_query)
+        new_entries = rh.get_entries_rule_1(results)
+        ts = pd.concat([ts, new_entries])
+    """""
+    print(ts)
 
     print("DONE - Successful!")
 

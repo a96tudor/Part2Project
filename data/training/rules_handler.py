@@ -1,4 +1,4 @@
-import data.training.constants as cnts
+from data.training import constants as cnts
 from data.training.database_driver import DatabaseDriver
 import pandas as pd
 
@@ -11,7 +11,7 @@ class RulesHandler:
         :param db_driver:       The db driver used to make queries
         """
         self._DB_DRIVER = db_driver
-        self._ONES_IDS = set()  # The set of IDs that are a '1' in the training set
+        self._LABEL_1_IDS = set()  # The set of IDs that are a '1' in the training set
 
     def _get_version_number(self, uuid: str, timestamp: int):
         """
@@ -114,6 +114,9 @@ class RulesHandler:
 
         name = self._DB_DRIVER.execute_query(query)[0]['f.name']
 
+        if name is None:
+            return 0
+
         if any(sub_str in name for sub_str in cnts.BLACKLIST['File']):
             return 1
         else:
@@ -189,8 +192,8 @@ class RulesHandler:
                                            0 otherwise
         """
         query = 'match (p:Process {uuid: "' + uuid +'", timestamp: ' + str(timestamp) + '})' \
-                'return p.meta_uid == p.meta_euid as uid_sts, ' \
-                       'p.meta_gid == p.meta_egid as gid_sts'
+                'return p.meta_uid = p.meta_euid as uid_sts, ' \
+                       'p.meta_gid = p.meta_egid as gid_sts'
 
         results = self._DB_DRIVER.execute_query(query)
 
@@ -202,5 +205,32 @@ class RulesHandler:
                     Method that build up the new entries for rule #1
 
         :param results:         A list of dicts containing the results of running the rule1 cypher statement
-        :return:                a pd.Dataframe containing all entries
+        :return:                A pd.Dataframe containing all entries
         """
+
+        rows_list = list()
+
+        for result in results:
+            uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
+            new_row = {
+                cnts.FEATURES[0]: result['f_uuid'],
+                cnts.FEATURES[1]: result['f_timestamp'],
+                cnts.FEATURES[2]: cnts.NODE_EDGE_CODES['File']['code'],
+                cnts.FEATURES[3]: cnts.NODE_EDGE_CODES['Process']['code'],
+                cnts.FEATURES[4]: cnts.NODE_EDGE_CODES['File']['BIN'],
+                cnts.FEATURES[5]: 1,                                       # The rule defines it as being from the web
+                cnts.FEATURES[6]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
+                cnts.FEATURES[7]: uid_sts,
+                cnts.FEATURES[8]: gid_sts,
+                cnts.FEATURES[9]: self._get_version_number(result['f_uuid'], result['f_timestamp']),
+                cnts.FEATURES[10]: self._file_is_suspicious(result['f_uuid'], result['f_timestamp']),
+                cnts.FEATURES[11]: self._file_is_external(result['f_uuid'], result['f_timestamp']),
+                cnts.FEATURES[12]: 1
+            }
+            self._LABEL_1_IDS.add((result['f_uuid'], result['f_timestamp']))
+
+            rows_list.append(new_row)
+
+        return pd.DataFrame(rows_list)
+
+
