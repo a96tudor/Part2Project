@@ -292,9 +292,41 @@ class RulesHandler:
                 cnts.FEATURES[12]: 1
             }
 
-            self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
+            self._LABEL_1_IDS.add((result['s_uuid'], result['s_timestamp']))
 
             rows_list.append(new_row)
 
         return pd.DataFrame(rows_list)
 
+    def get_entries_rule_4(self, results: list):
+        """
+                    Method that build up the new entries for rule #4
+
+        :param results:         A list of dicts containing the results of running the rule4 cypher statement
+        :return:                A pd.Dataframe containing all required entries
+        """
+        rows_list = list()
+
+        for result in results:
+            uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
+            new_row = {
+                cnts.FEATURES[0]: result['f_uuid'],
+                cnts.FEATURES[1]: result['f_timestamp'],
+                cnts.FEATURES[2]: cnts.NODE_EDGE_CODES['File']['code'],
+                cnts.FEATURES[3]: cnts.NODE_EDGE_CODES['Process']['code'],
+                cnts.FEATURES[4]: cnts.NODE_EDGE_CODES['Process'][result['rel_sts']],
+                cnts.FEATURES[5]: self._file_is_from_the_web(result['f_uuid'], result['f_timestamp']),
+                cnts.FEATURES[6]: 1,  # Defined by the rule itself
+                cnts.FEATURES[7]: uid_sts,
+                cnts.FEATURES[8]: gid_sts,
+                cnts.FEATURES[9]: self._get_version_number(result['f_uuid'], result['f_timestamp']),
+                cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
+                cnts.FEATURES[11]: 1,  # Again, as defined by the rule itself
+                cnts.FEATURES[12]: 1
+            }
+
+            self._LABEL_1_IDS.add((result['f_uuid'], result['f_timestamp']))
+
+            rows_list.append(new_row)
+
+        return pd.DataFrame(rows_list)

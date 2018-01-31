@@ -24,7 +24,11 @@ NODE_EDGE_CODES = {
     },
     'File': {
         'code': 2,
-        'BIN': 1
+        'BIN': 1,
+        'READ': 2,
+        'WRITE': 2,
+        'RaW': 2,
+        'NONE': 2
     },
     'Socket': {
         'code': 3,
