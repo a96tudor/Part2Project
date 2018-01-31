@@ -22,10 +22,6 @@ class DatabaseDriver:
             http_port=port
         )
 
-        self._NODES_OF_INTEREST = [
-            'File', 'Process', 'Socket', 'Machine'
-        ]
-
     def execute_query(self, query):
         """
 

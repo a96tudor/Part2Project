@@ -8,7 +8,8 @@ FEATURES = [
     'GID_STS',
     'VERSION',
     'SUSPICIOUS',
-    'EXTERNAL'
+    'EXTERNAL',
+    'LABEL'
 ]
 
 NODE_EDGE_CODES = {
@@ -53,11 +54,4 @@ RULES = {
         'rule3',
         'rule7'
     ]
-}
-
-RULES_FEATURES = {
-    'rule1': [2, 1, 1, 1, None, None, None, None, None, None, None],
-    'rule4': [2, 1, 1, None, 1, None, None, None, None, 1],
-    'rule2': [1, 3, None, 1, 1, None, None, None, None, 1],
-    'rule5': [3]
 }

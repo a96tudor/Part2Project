@@ -30,6 +30,14 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
 
     rule_files = os.listdir(rules_path)
 
+    def entries_for_rule_1(query_results):
+        """
+
+        :param query_results:       The query results for rule1, as a list of dicts
+        :return:                    A pd.Dataframe with the new entries
+        """
+
+
     for node in cnst.RULES:
         if node == 'File':
             for rule in cnst.RULES[node]:
