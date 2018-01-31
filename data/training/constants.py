@@ -55,3 +55,18 @@ RULES = {
         'rule7'
     ]
 }
+
+BLACKLIST = {
+    'Process': [
+        'sudo', 'chmod', 'usermod', 'groupmod', 'rm -rf',
+        '/etc/pwd', '/usr/bin', '/usr/lib', '/bin/', '/lib',
+        'attack', 'virus', 'worm', 'trojan'
+    ],
+    'File': [
+        'attack', 'worm', 'virus', 'trojan'
+    ]
+}
+
+DANGEROUS_LOCATIONS = {
+    '/etc/pwd', '/usr/bin', '/usr/lib', '/bin/', '/lib'
+}
