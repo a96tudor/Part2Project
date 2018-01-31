@@ -122,14 +122,12 @@ def parser_setup():
                                             help='Sub-command for evaluating the entire model',
                                            )
 
-
     return parser
 
 
 if __name__ == '__main__':
     parser = parser_setup()
-    args = parser.parse_args(["get_training_set"])
-    print(args)
+    args = parser.parse_args()
     args = vars(args)
     if len(args) == 0:
         parser.print_help()
@@ -144,3 +142,5 @@ if __name__ == '__main__':
                 sys.exit()
 
         # Otherwise, all good, we can continue
+
+        _COMMAND_ACTION[args['command']](args)
