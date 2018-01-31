@@ -20,7 +20,9 @@ NODE_EDGE_CODES = {
         'BIN': 1,
         'CLIENT': 2,
         'SERVER': 3,
-        'RaW': 4
+        'RaW': 4,
+        'WRITE': 4,
+        'NONE': 4
     },
     'File': {
         'code': 2,

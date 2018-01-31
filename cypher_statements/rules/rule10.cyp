@@ -14,4 +14,6 @@ where (
             f.name=~'/root/.*' or f.name=~'/dev/.*' or
             f.name=~'/usr/sbin/.*'
        	)
-return distinct p.uuid
+return p.uuid as p_uuid, p.timestamp as p_timestamp,
+       f.uuid as f_uuid, f.timestamp as f_timestamp,
+       c.state as rel_sts
