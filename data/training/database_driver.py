@@ -37,17 +37,3 @@ class DatabaseDriver:
 
         return results
 
-    def get_all_ids(self, rules_path):
-        """
-            Method that takes the rules from a given path and gets the IDs corresponding to
-        their results.
-
-        :param rules_path:      The path for the rule-files
-        :return:                A dictionary with the following structure:
-
-                            {
-                                'File': <list of IDs of the files of interest>,
-                                'Socket': <list of IDs of the Sockets of interest>,
-
-                            }
-        """

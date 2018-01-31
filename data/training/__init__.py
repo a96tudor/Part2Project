@@ -1,11 +1,10 @@
 from data.training import constants as cnst
-from data.training.database_driver import DatabaseDriver as DBD
-import pandas as pd
-import numpy as np
+from data.training.database_driver import DatabaseDriver
+import pandas as pd, numpy as np
+import os
 
-def generate_training_set(host='127.0.0.1', port=7474, db_usrname='neo4j',
-                          db_passwd='opus', rules_path='cypher_statements/rules',
-                          training_set_path='data/training/training_set.csv'):
+
+def generate_training_set(host, port, db_usrname, db_passwd, rules_path, training_set_path):
     """
         Method that creates a new training set, based on a set of pre-defined rules\
 
@@ -23,6 +22,11 @@ def generate_training_set(host='127.0.0.1', port=7474, db_usrname='neo4j',
     print("Started building the training set ...")
 
     ts = pd.DataFrame(columns=cnst.FEATURES)
+
+    db = DatabaseDriver(host=host,
+                        port=port,
+                        usrname=db_usrname,
+                        passwd=db_passwd)
 
     print("DONE - Successful!")
 

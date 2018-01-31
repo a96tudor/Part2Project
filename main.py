@@ -1,4 +1,5 @@
 import argparse, sys
+from data.training import generate_training_set
 
 
 def build_training_set(args):
@@ -8,7 +9,15 @@ def build_training_set(args):
     :param args:            A dictionary containing the required arguments for building the training set
     :return:                -
     """
-    print("Training set...")
+
+    generate_training_set(
+        host=args['host'],
+        port=args['port'],
+        db_usrname=args['user'],
+        db_passwd=args['pass'],
+        rules_path=args['rules'],
+        training_set_path=args['set']
+    )
 
 
 def train_data(args):

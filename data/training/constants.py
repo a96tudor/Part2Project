@@ -31,3 +31,26 @@ NODE_EDGE_CODES = {
     }
 }
 
+RULES = {
+    'File': [
+        'rule1',
+        'rule4'
+    ],
+    'Process': {
+        'File': [
+            'rule5',
+            'rule8',
+            'rule9',
+            'rule10',
+            'rule14',
+            'rule15'
+        ],
+        'Socket': [
+            'rule2'
+        ],
+    },
+    'Socket': [
+        'rule3',
+        'rule7'
+    ]
+}
