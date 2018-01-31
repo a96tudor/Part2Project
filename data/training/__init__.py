@@ -34,19 +34,31 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
 
     _CURRENT_RULES = {
         #'rule1': rh.get_entries_rule_1,
-        'rule2': rh.get_entries_rule_2
+        #'rule2': rh.get_entries_rule_2,
+        'rule3': rh.get_entries_rule_3
+
     }
 
     rule_files = os.listdir(rules_path)
 
     for rule in _CURRENT_RULES:
-        with open(rules_path + rule + '.cyp') as f:
-            rule_query = f.read()
-            new_entries = _CURRENT_RULES[rule](db.execute_query(rule_query))
+        print("Adding nodes defined by "+rule+"... ")
+        try:
+            with open(rules_path + rule + '.cyp') as f:
+                rule_query = f.read()
+                new_entries = _CURRENT_RULES[rule](db.execute_query(rule_query))
 
-            ts = pd.concat([ts, new_entries])
+                ts = pd.concat([ts, new_entries])
+        except:
+            print("ERROR adding nodes defined by " + rule + "!!!")
 
-    print(ts)
+    print("Writing training set to " + training_set_path)
+
+    try:
+        ts.to_csv(index=False, path_or_buf=training_set_path)
+    except:
+        print("ERROR writing dataframe to given training set path")
+        return False
 
     print("DONE - Successful!")
 
