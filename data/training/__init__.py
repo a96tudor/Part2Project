@@ -2,8 +2,6 @@ from data.training import constants as cnst
 from data.training.database_driver import DatabaseDriver
 from data.training.rules_handler import RulesHandler
 import pandas as pd, numpy as np
-import os
-
 
 
 def generate_training_set(host, port, db_usrname, db_passwd, rules_path, training_set_path):
@@ -33,24 +31,27 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
     rh = RulesHandler(db_driver=db)
 
     _CURRENT_RULES = {
-        #'rule1': rh.get_entries_rule_1,
-        #'rule2': rh.get_entries_rule_2,
-        'rule3': rh.get_entries_rule_3
-
+        'rule1': rh.get_entries_rule_1,
+        'rule2': rh.get_entries_rule_2,
+        'rule3': rh.get_entries_rule_3,
+        'rule4': rh.get_entries_rule_4,
+        'rule5': rh.get_entries_rule_5,
+        'rule8': rh.get_entries_rule_8,
+        'rule9': rh.get_entries_rule_9,
+        'rule10': rh.get_entries_rule_10,
+        'rule14': rh.get_entries_rule_14,
     }
-
-    rule_files = os.listdir(rules_path)
 
     for rule in _CURRENT_RULES:
         print("Adding nodes defined by "+rule+"... ")
-        try:
-            with open(rules_path + rule + '.cyp') as f:
-                rule_query = f.read()
-                new_entries = _CURRENT_RULES[rule](db.execute_query(rule_query))
+        with open(rules_path + rule + '.cyp') as f:
+            rule_query = f.read()
+            new_entries = _CURRENT_RULES[rule](db.execute_query(rule_query))
 
-                ts = pd.concat([ts, new_entries])
-        except:
-            print("ERROR adding nodes defined by " + rule + "!!!")
+            ts = pd.concat([ts, new_entries])
+            print("Added " + str(new_entries.shape[0]) + " new entries!")
+
+    print("Finished adding nodes based on rules! Added " + str(ts.shape[0]) + " nodes in total!")
 
     print("Writing training set to " + training_set_path)
 

@@ -21,8 +21,9 @@ NODE_EDGE_CODES = {
         'CLIENT': 2,
         'SERVER': 3,
         'RaW': 4,
-        'WRITE': 4,
-        'NONE': 4
+        'WRITE': 5,
+        'NONE': 4,
+        'READ': 6
     },
     'File': {
         'code': 2,
@@ -52,6 +53,6 @@ BLACKLIST = {
     ]
 }
 
-DANGEROUS_LOCATIONS = {
-    '/etc/pwd', '/usr/bin', '/usr/lib', '/bin/', '/lib'
-}
+DANGEROUS_LOCATIONS = [
+    '/etc/pwd', '/usr/bin', '/usr/lib', '/bin/', '/lib', '/boot', '/dev', '/root'
+]

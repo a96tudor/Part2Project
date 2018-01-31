@@ -116,6 +116,8 @@ class RulesHandler:
 
         if name is None:
             return 0
+        else:
+            name = name[0]
 
         if any(sub_str in name for sub_str in cnts.BLACKLIST['File']):
             return 1
@@ -305,6 +307,8 @@ class RulesHandler:
         :param results:         A list of dicts containing the results of running the rule4 cypher statement
         :return:                A pd.Dataframe containing all required entries
         """
+
+        print(len(results))
         rows_list = list()
 
         for result in results:
@@ -454,6 +458,39 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[10]: 1,  # As defined by the rule itself
                 cnts.FEATURES[11]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
+                cnts.FEATURES[12]: 1
+            }
+
+            self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
+
+            rows_list.append(new_row)
+
+        return pd.DataFrame(rows_list)
+
+    def get_entries_rule_14(self, results: list):
+        """
+                                    Method that build up the new entries for rule #8
+
+                :param results:         A list of dicts containing the results of running the rule8 cypher statement
+                :return:                A pd.Dataframe containing all required entries
+                """
+        rows_list = list()
+
+        for result in results:
+            uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
+            new_row = {
+                cnts.FEATURES[0]: result['p_uuid'],
+                cnts.FEATURES[1]: result['p_timestamp'],
+                cnts.FEATURES[2]: cnts.NODE_EDGE_CODES['Process']['code'],
+                cnts.FEATURES[3]: cnts.NODE_EDGE_CODES['File']['code'],
+                cnts.FEATURES[4]: cnts.NODE_EDGE_CODES['Process'][result['rel_sts']],
+                cnts.FEATURES[5]: self._file_is_from_the_web(result['f_uuid'], result['f_timestamp']),
+                cnts.FEATURES[6]: 1,  # As defined by the rule
+                cnts.FEATURES[7]: uid_sts,
+                cnts.FEATURES[8]: gid_sts,
+                cnts.FEATURES[9]: self._get_version_number(result['p_uuid'], result['p_timestamp']),
+                cnts.FEATURES[10]: 1,  # As defined by the rule
+                cnts.FEATURES[11]: 1,  # As defined by the rule
                 cnts.FEATURES[12]: 1
             }
 
