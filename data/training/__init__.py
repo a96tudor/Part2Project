@@ -33,7 +33,8 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
     rh = RulesHandler(db_driver=db)
 
     _CURRENT_RULES = {
-        'rule1': rh.get_entries_rule_1
+        #'rule1': rh.get_entries_rule_1,
+        'rule2': rh.get_entries_rule_2
     }
 
     rule_files = os.listdir(rules_path)
@@ -45,13 +46,6 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
 
             ts = pd.concat([ts, new_entries])
 
-    """"
-    with open("cypher_statements/rules/rule1.cyp") as f:
-        rule_query = f.read()
-        results = db.execute_query(rule_query)
-        new_entries = rh.get_entries_rule_1(results)
-        ts = pd.concat([ts, new_entries])
-    """""
     print(ts)
 
     print("DONE - Successful!")
