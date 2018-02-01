@@ -49,7 +49,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
         'rule8': rh.get_entries_rule_8,
         'rule9': rh.get_entries_rule_9,
         'rule10': rh.get_entries_rule_10,
-        'rule14': rh.get_entries_rule_14,
+        'rule14': rh.get_entries_rule_14
     }
 
     for rule in _CURRENT_RULES:

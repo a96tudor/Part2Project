@@ -234,6 +234,9 @@ class RulesHandler:
 
         cmdline = self._DB_DRIVER.execute_query(query)[0]['p.cmdline']
 
+        if cmdline is None:
+            return 0
+
         if any(sub_str in cmdline for sub_str in cnts.BLACKLIST['Process']):
             return 1
 
