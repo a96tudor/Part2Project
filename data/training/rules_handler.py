@@ -150,13 +150,13 @@ class RulesHandler:
         query_file = 'match (f:File)-[rel:PROC_OBJ]->(p:Process {uuid: "' + p_uuid + '", ' \
                                                             'timestamp: ' + str(p_timestamp) + '})' \
                 'return f.uuid as uuid, f.timestamp as timestamp, rel.state as rel_sts, ' \
-                            'abs(f.timestamp - p.timestamp) as diff' \
+                            'abs(f.timestamp - p.timestamp) as diff ' \
                     'order by abs(f.timestamp - p.timestamp) limit 1'
 
         query_socket = 'match (s:Socket)-[rel:PROC_OBJ]->(p:Process {uuid: "' + p_uuid + '", ' \
                                                             'timestamp: ' + str(p_timestamp) + '})' \
                 'return s.uuid as uuid, s.timestamp as timestamp, rel.state as rel_sts, ' \
-                            'abs(s.timestamp - p.timestamp) as diff' \
+                            'abs(s.timestamp - p.timestamp) as diff ' \
                     'order by abs(s.timestamp - p.timestamp) limit 1'
 
         closest_file = self._DB_DRIVER.execute_query(query_file)
@@ -715,6 +715,9 @@ class RulesHandler:
 
         for file in all_nodes['File']:
 
+            if "dummy" in file['uuid']:
+                continue
+
             if (file['uuid'], file['timestamp']) in self._LABEL_1_IDS:
                 # We already entered this node as a 'label 1' in the training set, so we skip it
                 continue
@@ -740,6 +743,9 @@ class RulesHandler:
 
         for socket in all_nodes['Socket']:
 
+            if "dummy" in socket['uuid']:
+                continue
+
             if (socket['uuid'], socket['timestamp']) in self._LABEL_1_IDS:
                 # We already entered this node as a 'label 1' in the training set, so we skip it
                 continue
@@ -764,6 +770,9 @@ class RulesHandler:
             )
 
         for process in all_nodes['Process']:
+
+            if "dummy" in process['uuid']:
+                continue
 
             if (process['uuid'], process['timestamp']) in self._LABEL_1_IDS:
                 # We already entered this node as a 'label 1' in the training set, so we skip it
