@@ -28,6 +28,16 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
                         usrname=db_usrname,
                         passwd=db_passwd)
 
+    print("Successfully connected to the database!")
+
+    query = "match (x)" \
+            "where not 'Machine' in labels(x) and not 'Meta' in labels(x) " \
+            "return count(x) as total"
+
+    _TOTAL_NO_OF_NODES = db.execute_query(query)[0]['total']
+
+    print('There are ' + str(_TOTAL_NO_OF_NODES) + ' nodes to process!')
+
     rh = RulesHandler(db_driver=db)
 
     _CURRENT_RULES = {
@@ -51,9 +61,25 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
             ts = pd.concat([ts, new_entries])
             print("Added " + str(new_entries.shape[0]) + " new entries!")
 
-    print("Finished adding nodes based on rules! Added " + str(ts.shape[0]) + " nodes in total!")
+    print("=======================================================================")
+    print("Finished adding nodes based on rules! Added " + str(ts.shape[0]) + " 1-labeled entries in total!")
+    print("Now onto 0-labeled nodes...")
+    print('There are ' + str(_TOTAL_NO_OF_NODES - rh.get_1_labeled_count()) + ' remaining nodes to process... Getting to work... ')
+    print("=======================================================================")
 
+    print("This might take a while...")
+    zero_labeled_entries = rh.get_0_labels()
+
+    print("There are " + str(zero_labeled_entries.shape[0]) + ' 0-labeled entries!')
+
+    ts = pd.concat([ts, zero_labeled_entries])
+
+    print("Phiew, finally done!")
+
+    print("=======================================================================")
+    print("TOTAL ENTRIES: " + str(ts.shape[0]))
     print("Writing training set to " + training_set_path)
+    print("=======================================================================")
 
     try:
         ts.to_csv(index=False, path_or_buf=training_set_path)

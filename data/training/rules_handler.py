@@ -163,7 +163,7 @@ class RulesHandler:
         closest_socket = self._DB_DRIVER.execute_query(query_socket)
 
         if len(closest_file) == 0 and len(closest_socket) == 0:
-            return 0
+            return None
 
         if len(closest_file) == 0:
             return {
@@ -379,9 +379,9 @@ class RulesHandler:
         }
 
         if node['type'] == 'Process':
-            uid_sts, gid_sts = self._get_process_IDs_status(node['uid'], node['timestamp'])
+            uid_sts, gid_sts = self._get_process_IDs_status(node['uuid'], node['timestamp'])
         else:
-            uid_sts, gid_sts = self._get_process_IDs_status(neighbour['uid'], neighbour['timestamp'])
+            uid_sts, gid_sts = self._get_process_IDs_status(neighbour['uuid'], neighbour['timestamp'])
 
         return {
             cnts.FEATURES[0]: node['uuid'],
@@ -673,6 +673,7 @@ class RulesHandler:
                 :param results:         A list of dicts containing the results of running the rule8 cypher statement
                 :return:                A pd.Dataframe containing all required entries
                 """
+        print(len(results))
         rows_list = list()
 
         for result in results:
@@ -715,7 +716,14 @@ class RulesHandler:
                 # We already entered this node as a 'label 1' in the training set, so we skip it
                 continue
 
+            if file['uuid'] is None or file['timestamp'] is None:
+                continue
+
             process = self._file_get_closest_process(file['uuid'], file['timestamp'])
+
+            if process is None:
+                # Just ignore this entry, too
+                continue
 
             process['type'] = 'Process'
             file['type'] = 'File'
@@ -733,7 +741,14 @@ class RulesHandler:
                 # We already entered this node as a 'label 1' in the training set, so we skip it
                 continue
 
+            if socket['uuid'] is None or socket['timestamp'] is None:
+                continue
+
             process = self._socket_get_closest_process(socket['uuid'], socket['timestamp'])
+
+            if process is None:
+                # Just ignore this entry
+                continue
 
             process['type'] = 'Process'
             socket['type'] = 'Socket'
@@ -751,7 +766,14 @@ class RulesHandler:
                 # We already entered this node as a 'label 1' in the training set, so we skip it
                 continue
 
+            if process['uuid'] is None or process['timestamp'] is None:
+                continue
+
             closest_node = self._process_get_closest_neighbour(process['uuid'], process['timestamp'])
+
+            if closest_node is None:
+                # Just ignore this entry
+                continue
 
             process['type'] = 'Process'
 
@@ -761,4 +783,13 @@ class RulesHandler:
                     neighbour=closest_node
                 )
             )
-            
+
+        return pd.DataFrame(all_rows)
+
+    def get_1_labeled_count(self):
+        """
+                Method that returns the count of nodes 1-labeled
+
+        :return:        The number of 1-labeled nodes
+        """
+        return len(self._LABEL_1_IDS)
