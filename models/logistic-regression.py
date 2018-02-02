@@ -10,8 +10,6 @@ _UNWANTED_COLUMNS = [
 
 _Y_COL = "LABEL"
 
-_SHAPE = []
-
 class LogisticRegression:
 
     def __init__(self, train_path, test_path, log=False):
@@ -154,6 +152,8 @@ class LogisticRegression:
                     ) / num_batch
 
                 if self._log and epoch % self._display_step == 0:
+                    print("=================================")
+
                     print("Epoch %03d/%03d cost: %.9f" % (epoch, self._training_epochs, avg_cost))
 
                     train_acc = sess.run(
