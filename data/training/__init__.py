@@ -82,7 +82,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
     print("=======================================================================")
 
     try:
-        ts.to_csv(index=False, path_or_buf=training_set_path)
+        ts.to_csv(index=True, path_or_buf=training_set_path)
     except:
         print("ERROR writing dataframe to given training set path")
         return False
