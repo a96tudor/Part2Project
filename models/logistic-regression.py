@@ -43,8 +43,6 @@ class LogisticRegression:
             print("Batch size: ", self._batch_size)
             print("=================================")
 
-        # INITIALISING TF FUNCTIONS TO None
-
     def setup(self):
         """
                 Method that does the setup for the model. It:
@@ -58,14 +56,14 @@ class LogisticRegression:
             print("Reading data...")
 
         train = pd.read_csv(self._train_path)
-        Ys = train.as_matrix(columns=[_Y_COL])
+        self._Ys = train.as_matrix(columns=[_Y_COL])
 
         train.drop(columns=_UNWANTED_COLUMNS)
-        Xs = train.as_matrix()
+        self._Xs = train.as_matrix()
 
-        data_cnt = train.shape[0]  # number of rows in the dataframe
-        dim = train.shape[1]       # number of dimensions
-        nclass = 2                 # number of classes
+        self._data_cnt = train.shape[0]  # number of rows in the dataframe
+        self._dim = train.shape[1]       # number of dimensions
+        self._nclass = 2                 # number of classes
 
         if self._log:
             print("Done!")
@@ -83,8 +81,8 @@ class LogisticRegression:
         if self._log:
             print("Setting up TensorFlow Graph input")
 
-        x = tf.placeholder('float', [None, dim])
-        y = tf.placeholder('float', [None, nclass])
+        self._x = tf.placeholder('float', [None, dim])
+        self._y = tf.placeholder('float', [None, nclass])
 
         # SETTING UP FUNCTIONS
         if self._log:
@@ -103,7 +101,7 @@ class LogisticRegression:
         )
         self._cost = cost + WEIGHT_DECAY_FACTOR*l2_loss
 
-        optm = tf.train.GradientDescentOptimizer(self._learning_rate).minimize(cost)
+        self._optm = tf.train.GradientDescentOptimizer(self._learning_rate).minimize(cost)
 
         _corr = tf.equal(
             tf.argmax(_pred, 1),
@@ -113,9 +111,60 @@ class LogisticRegression:
             tf.cast(_corr, tf.float32)
         )
 
-        self_init = tf.initialize_all_variables()
+        self._init = tf.initialize_all_variables()
 
         if self._log:
             print("DONE! Setup successful!")
 
-    
+    def optimise(self):
+        """
+            Optimising the model!
+
+        :return: -
+        """
+
+        with tf.Session() as sess:
+            for epoch in range(self._training_epochs):
+                sess.run(self._init)
+                avg_cost = 0
+                num_batch = int(self._data_cnt / self._batch_size)
+
+                for i in range(num_batch):
+                    randidx = np.random.randint(self._data_cnt, size=self._batch_size)
+
+                    batch_Xs = self.Xs[randidx, :]
+                    batch_Ys = self._Ys[randidx, :]
+
+                    # Fitting using the data in the current batch
+                    sess.run(
+                        self._optm,
+                        feed_dict={
+                            self._x: batch_Xs,
+                            self._y: batch_Ys
+                        }
+                    )
+
+                    # Computing average loss
+                    avg_cost += sess.run(
+                        self._cost,
+                        feed_dict={
+                            self._x: batch_Xs,
+                            self._Ys: batch_Ys
+                        }
+                    ) / num_batch
+
+                if self._log and epoch % self._display_step == 0:
+                    print("Epoch %03d/%03d cost: %.9f" % (epoch, self._training_epochs, avg_cost))
+
+                    train_acc = sess.run(
+                                    self._accr,
+                                    feed_dict={
+                                        self._x: self._Xs,
+                                        self._y: self._Ys
+                                    }
+                                )
+                    print("Training accuracy: %.4f" % train_acc)
+
+
+
+
