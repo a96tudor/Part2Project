@@ -58,7 +58,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
             rule_query = f.read()
             new_entries = _CURRENT_RULES[rule](db.execute_query(rule_query))
 
-            ts = pd.concat([ts, new_entries])
+            ts = pd.concat([ts, new_entries], ignore_index=True)
             print("Added " + str(new_entries.shape[0]) + " new entries!")
 
     print("=======================================================================")
@@ -72,7 +72,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
 
     print("There are " + str(zero_labeled_entries.shape[0]) + ' 0-labeled entries!')
 
-    ts = pd.concat([ts, zero_labeled_entries])
+    ts = pd.concat([ts, zero_labeled_entries], ignore_index=True)
 
     print("Phiew, finally done!")
 
