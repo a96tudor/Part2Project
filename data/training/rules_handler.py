@@ -798,6 +798,7 @@ class RulesHandler:
 
         return pd.DataFrame(all_rows)
 
+    @property
     def get_1_labeled_count(self):
         """
                 Method that returns the count of nodes 1-labeled

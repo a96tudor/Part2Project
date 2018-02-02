@@ -64,7 +64,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
     print("=======================================================================")
     print("Finished adding nodes based on rules! Added " + str(ts.shape[0]) + " 1-labeled entries in total!")
     print("Now onto 0-labeled nodes...")
-    print('There are ' + str(_TOTAL_NO_OF_NODES - rh.get_1_labeled_count()) + ' remaining nodes to process... Getting to work... ')
+    print('There are ' + str(_TOTAL_NO_OF_NODES - rh.get_1_labeled_count) + ' remaining nodes to process... Getting to work... ')
     print("=======================================================================")
 
     print("This might take a while...")
@@ -90,3 +90,13 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
     print("DONE - Successful!")
 
     return True
+
+def split_training_set(training_set_path='data/training/training-set.csv',
+                       results_path='data/tmp/', training_percentile= .75):
+    """
+
+    :param training_set_path:                Path to the CSV file containing the full dataset
+    :param results_path:
+    :param training_percentile:
+    :return:
+    """
