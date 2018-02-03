@@ -1,5 +1,6 @@
 import argparse, sys
 from data.training import generate_training_set, split_training_set
+from models import evaluate
 
 
 def build_training_set(args):
@@ -9,7 +10,7 @@ def build_training_set(args):
     :param args:            A dictionary containing the required arguments for building the training set
     :return:                -
     """
-    """
+
     generate_training_set(
         host=args['host'],
         port=args['port'],
@@ -18,7 +19,6 @@ def build_training_set(args):
         rules_path=args['rules'],
         training_set_path=args['set']
     )
-    """
 
     split_training_set()
 
@@ -33,7 +33,7 @@ def train_data(args):
     print("Training...")
 
 
-def evaluate(args):
+def evaluate_model(args):
     """
             Function that takes the appropriate actions in order to evaluate the model
 
@@ -42,6 +42,7 @@ def evaluate(args):
     """
     print("Evaluating...")
 
+    evaluate(args['model'], args['paths'], args['log'])
 
 def classify(args):
     """
@@ -56,7 +57,7 @@ def classify(args):
 _COMMAND_ACTION = {
     'get_training_set': build_training_set,
     'train': train_data,
-    'eval': evaluate,
+    'eval': evaluate_model,
     'classify': classify
 }
 
@@ -134,6 +135,20 @@ def parser_setup():
                                             help='Sub-command for evaluating the entire model',
                                            )
 
+    parser_evaluate.add_argument('--model',
+                                 choices=['logistic'],
+                                 type=str,
+                                 help='Type of model we want to evaluate')
+
+    parser_evaluate.add_argument('--log',
+                                 help='Whether we want to log our way through the evaluation or not',
+                                 action='store_true')
+
+    parser_evaluate.add_argument('--paths',
+                                 help='The files where we read the data from',
+                                 nargs=2,
+                                 type=str,
+                                 default=['data/tmp/train.csv', 'data/tmp/test.csv'])
     return parser
 
 
@@ -154,5 +169,5 @@ if __name__ == '__main__':
                 sys.exit()
 
         # Otherwise, all good, we can continue
-
+        print(args)
         _COMMAND_ACTION[args['command']](args)

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="7ec23560-7777-422e-89ac-fd8057dad031" name="Python3.6">
+        <fileTransfer port="21">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="21" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="4317c183-c3ed-4139-93c7-cc0c37d5fa87" name="py3" url="http://localhost">
+        <fileTransfer port="0" mountedRoot="/usr/local/lib/python3.6/site-packages" accessType="MOUNT" />
+      </webServer>
+    </option>
+  </component>
+</project>

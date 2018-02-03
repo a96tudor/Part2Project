@@ -152,12 +152,12 @@ def split_training_set(training_set_path='data/training/training_set.csv',
         data_train = pd.concat([data_train, train], ignore_index=True)
         data_test = pd.concat([data_test, test], ignore_index=True)
 
-    print("Writing the two datasets to %s and %s ... ", (train_file, test_file))
+    print("Writing the two datasets to %s and %s ... " % (train_file, test_file))
     data_train.to_csv(train_file)
     data_test.to_csv(test_file)
 
     print("==================================")
     print("DONE!")
-    print("%d training examples", len(data_train))
-    print("%d test examples", len(data_test))
+    print("%d training examples" % len(data_train))
+    print("%d test examples" % len(data_test))
     print("==================================")

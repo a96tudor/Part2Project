@@ -64,23 +64,25 @@ class LogisticRegression:
         self._nclass = 2                 # number of classes
 
         if self._log:
-            print("Done!")
-            print("%d train examples loaded" % data_cnt)
-            print("%d dimensions" % dim)
-            print("%d classes" % nclass)
+            print("=================================")
+            print("Done reading data!")
+            print("%d train examples loaded" % self._data_cnt)
+            print("%d dimensions" % self._dim)
+            print("%d classes" % self._nclass)
+            print("=================================")
 
         # SETTING UP TENSORFLOW VARIABLES
         if self._log:
             print("Setting up weights tensors")
 
-        w_tensor = tf.Variable(tf.zeros())
-        b_tensor = tf.Variable(tf.zeros(2))
+        w_tensor = tf.Variable(tf.zeros([self._dim, self._nclass]), name='weights')
+        b_tensor = tf.Variable(tf.zeros([self._nclass]))
 
         if self._log:
             print("Setting up TensorFlow Graph input")
 
-        self._x = tf.placeholder('float', [None, dim])
-        self._y = tf.placeholder('float', [None, nclass])
+        self._x = tf.placeholder('float', [None, self._dim])
+        self._y = tf.placeholder('float', [None, self._nclass])
 
         # SETTING UP FUNCTIONS
         if self._log:
@@ -92,7 +94,7 @@ class LogisticRegression:
             tf.nn.l2_loss(v) for v in tf.trainable_variables()
         )
 
-        _pred = tf.nn.softmax(tf.matmul(x, w_tensor) + b_tensor)
+        _pred = tf.nn.softmax(tf.matmul(self._x, w_tensor) + b_tensor)
         cost = tf.reduce_mean(
             -tf.reduce_sum(y * tf.log(_pred)),
             reduction_indices=1
