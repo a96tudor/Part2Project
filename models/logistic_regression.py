@@ -71,18 +71,18 @@ class LogisticRegression:
             print("%d classes" % self._nclass)
             print("=================================")
 
+        if self._log:
+            print("Setting up TensorFlow Graph input")
+
+        self._x = tf.placeholder('float', [None, self._dim])
+        self._y = tf.placeholder('float', [None, self._nclass])
+
         # SETTING UP TENSORFLOW VARIABLES
         if self._log:
             print("Setting up weights tensors")
 
         w_tensor = tf.Variable(tf.zeros([self._dim, self._nclass]), name='weights')
         b_tensor = tf.Variable(tf.zeros([self._nclass]))
-
-        if self._log:
-            print("Setting up TensorFlow Graph input")
-
-        self._x = tf.placeholder('float', [None, self._dim])
-        self._y = tf.placeholder('float', [None, self._nclass])
 
         # SETTING UP FUNCTIONS
         if self._log:
@@ -91,13 +91,12 @@ class LogisticRegression:
         WEIGHT_DECAY_FACTOR = 1  # 10^(-6)
 
         l2_loss = tf.add_n(
-            tf.nn.l2_loss(v) for v in tf.trainable_variables()
+            [tf.nn.l2_loss(v) for v in tf.trainable_variables()]
         )
 
         _pred = tf.nn.softmax(tf.matmul(self._x, w_tensor) + b_tensor)
         cost = tf.reduce_mean(
-            -tf.reduce_sum(y * tf.log(_pred)),
-            reduction_indices=1
+            -tf.reduce_sum(self._y * tf.log(_pred),reduction_indices=1)
         )
         self._cost = cost + WEIGHT_DECAY_FACTOR*l2_loss
 
@@ -105,13 +104,13 @@ class LogisticRegression:
 
         _corr = tf.equal(
             tf.argmax(_pred, 1),
-            tf.argmax(y, 1)
+            tf.argmax(self._y, 1)
         )
         self._accr = tf.reduce_mean(
             tf.cast(_corr, tf.float32)
         )
 
-        self._init = tf.initialize_all_variables()
+        self._init = tf.global_variables_initializer()
 
         if self._log:
             print("DONE! Setup successful!")
