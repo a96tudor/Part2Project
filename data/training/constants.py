@@ -11,7 +11,8 @@ FEATURES = [
     'VERSION',
     'SUSPICIOUS',
     'EXTERNAL',
-    'LABEL'
+    'SHOW',
+    'HIDE'
 ]
 
 NODE_EDGE_CODES = {
