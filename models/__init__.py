@@ -1,1 +1,2 @@
+from models.logistic_regression import LogisticRegression
 
