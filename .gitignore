@@ -183,4 +183,4 @@ data/.idea
 data/training/testing.py
 data/training/__pycache__
 data/training/training_set.csv
-
+data/tmp
