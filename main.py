@@ -1,5 +1,5 @@
 import argparse, sys
-from data.training import generate_training_set
+from data.training import generate_training_set, split_training_set
 
 
 def build_training_set(args):
@@ -9,7 +9,7 @@ def build_training_set(args):
     :param args:            A dictionary containing the required arguments for building the training set
     :return:                -
     """
-
+    """
     generate_training_set(
         host=args['host'],
         port=args['port'],
@@ -18,6 +18,9 @@ def build_training_set(args):
         rules_path=args['rules'],
         training_set_path=args['set']
     )
+    """
+
+    split_training_set()
 
 
 def train_data(args):

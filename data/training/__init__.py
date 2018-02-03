@@ -2,6 +2,7 @@ from data.training import constants as cnst
 from data.training.database_driver import DatabaseDriver
 from data.training.rules_handler import RulesHandler
 import pandas as pd, numpy as np
+from collections import Counter
 
 
 def generate_training_set(host, port, db_usrname, db_passwd, rules_path, training_set_path):
@@ -91,12 +92,72 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
 
     return True
 
-def split_training_set(training_set_path='data/training/training-set.csv',
-                       results_path='data/tmp/', training_percentile= .75):
+
+def split_training_set(training_set_path='data/training/training_set.csv',
+                       results_path='data/tmp/', training_percentile=.75):
     """
 
     :param training_set_path:                Path to the CSV file containing the full dataset
-    :param results_path:
-    :param training_percentile:
-    :return:
+    :param results_path:                     Folder where to save the split dataset
+    :param training_percentile:              Fraction of the dataset that will act as the training data
+
+    :return:                                 - path to the training dataset
+                                             - path to the testing dataset
     """
+    def split(df, head_size):
+        """
+
+        :param df:              Dataframe to split
+        :param head_size:       Head size for the split
+
+        :return:                - The first head_size rows as a dataframe
+                                - The last len(df) - head_size rows as a dataframe
+        """
+        hd = df.head(head_size)
+        tl = df.tail(len(df) - head_size)
+
+        return hd, tl
+
+    train_file = results_path + 'train.csv'
+    test_file  = results_path + 'test.csv'
+
+    print("Reading data...")
+    # READING FULL DATASET
+    training_set_path = str(training_set_path)
+    data_full = pd.read_csv(training_set_path)
+
+    # INITIALIZING THE TRAIN AND TEST DATAFRAMES
+    data_train = pd.DataFrame(columns=cnst.FEATURES)
+    data_test = pd.DataFrame(columns=cnst.FEATURES)
+
+    # GETTING INDIVIDUAL NODE COUNTS
+    node_types = data_full['NODE_TYPE'].tolist()
+    diff_node_types = set(node_types)
+
+    node_counts = {
+        node: node_types.count(node) for node in diff_node_types
+    }
+
+    print("Splitting data...")
+    # SPLITTING THE DATASET BASED ON THE 'NODE_TYPE' COLUMN
+    for node in node_counts:
+        test_nodes = int(training_percentile * node_counts[node])
+
+        data_node = data_full[
+            data_full['NODE_TYPE'] == node
+        ]
+
+        train, test = split(data_node, test_nodes)
+
+        data_train = pd.concat([data_train, train], ignore_index=True)
+        data_test = pd.concat([data_test, test], ignore_index=True)
+
+    print("Writing the two datasets to %s and %s ... ", (train_file, test_file))
+    data_train.to_csv(train_file)
+    data_test.to_csv(test_file)
+
+    print("==================================")
+    print("DONE!")
+    print("%d training examples", len(data_train))
+    print("%d test examples", len(data_test))
+    print("==================================")
