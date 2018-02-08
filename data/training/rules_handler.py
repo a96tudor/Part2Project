@@ -402,7 +402,7 @@ class RulesHandler:
                                     else check_if_suspicious[node['type']](node['uuid'], node['timestamp']),
             cnts.FEATURES[11]: check_if_external[node['type']](node['uuid'], node['timestamp']),
             cnts.FEATURES[12]: 0,
-            cnts.FEATURES[12]: 1
+            cnts.FEATURES[13]: 1
         }
 
     def get_entries_rule_1(self, results: list):
@@ -431,8 +431,12 @@ class RulesHandler:
                 cnts.FEATURES[10]: self._file_is_suspicious(result['f_uuid'], result['f_timestamp']),
                 cnts.FEATURES[11]: self._file_is_external(result['f_uuid'], result['f_timestamp']),
                 cnts.FEATURES[12]: 1,
-                cnts.FEATURES[12]: 0
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
+
             self._LABEL_1_IDS.add((result['f_uuid'], result['f_timestamp']))
 
             rows_list.append(new_row)
@@ -463,8 +467,11 @@ class RulesHandler:
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: 1,  # Again, as defined by the rule itself
                 cnts.FEATURES[12]: 1,
-                cnts.FEATURES[12]: 0
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -497,8 +504,11 @@ class RulesHandler:
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: 1,  # Again, as defined by the rule itself
                 cnts.FEATURES[12]: 1,
-                cnts.FEATURES[12]: 0
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['s_uuid'], result['s_timestamp']))
 
@@ -533,8 +543,11 @@ class RulesHandler:
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: 1,  # Again, as defined by the rule itself
                 cnts.FEATURES[12]: 1,
-                cnts.FEATURES[12]: 0
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['f_uuid'], result['f_timestamp']))
 
@@ -567,8 +580,11 @@ class RulesHandler:
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[12]: 1,
-                cnts.FEATURES[12]: 0
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -601,8 +617,11 @@ class RulesHandler:
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[12]: 1,
-                cnts.FEATURES[12]: 0
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -635,8 +654,11 @@ class RulesHandler:
                 cnts.FEATURES[10]: 1,  # As defined by the rule
                 cnts.FEATURES[11]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[12]: 1,
-                cnts.FEATURES[12]: 0
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -669,8 +691,11 @@ class RulesHandler:
                 cnts.FEATURES[10]: 1,  # As defined by the rule itself
                 cnts.FEATURES[11]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[12]: 1,
-                cnts.FEATURES[12]: 0
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -704,8 +729,11 @@ class RulesHandler:
                 cnts.FEATURES[10]: 1,  # As defined by the rule
                 cnts.FEATURES[11]: 1,  # As defined by the rule
                 cnts.FEATURES[12]: 1,
-                cnts.FEATURES[12]: 0
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 

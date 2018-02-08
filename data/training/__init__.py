@@ -62,6 +62,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
             ts = pd.concat([ts, new_entries], ignore_index=True)
             print("Added " + str(new_entries.shape[0]) + " new entries!")
 
+
     print("=======================================================================")
     print("Finished adding nodes based on rules! Added " + str(ts.shape[0]) + " 1-labeled entries in total!")
     print("Now onto 0-labeled nodes...")

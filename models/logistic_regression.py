@@ -29,7 +29,7 @@ class LogisticRegression:
         if log:
             print("Initialising parameters...")
 
-        self._learning_rate = 0.01
+        self._learning_rate = 0.0001
         self._training_epochs = 1000
         self._batch_size = 1000
         self._display_step = 100
@@ -97,7 +97,7 @@ class LogisticRegression:
         if self._log:
             print("Setting up TensorFlow functions")
 
-        WEIGHT_DECAY_FACTOR = 1  # 10^(-6)
+        WEIGHT_DECAY_FACTOR = 0.00001  # 10^(-6)
 
         l2_loss = tf.add_n(
             [tf.nn.l2_loss(v) for v in tf.trainable_variables()]
@@ -107,6 +107,7 @@ class LogisticRegression:
 
         cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(_pred)
                                              , reduction_indices=1))
+
         cost = cost + WEIGHT_DECAY_FACTOR * l2_loss
 
         optm = tf.train.GradientDescentOptimizer(self._learning_rate).minimize(cost)
