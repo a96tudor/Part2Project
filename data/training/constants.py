@@ -11,7 +11,8 @@ FEATURES = [
     'VERSION',
     'SUSPICIOUS',
     'EXTERNAL',
-    'LABEL'
+    'SHOW',
+    'HIDE'
 ]
 
 NODE_EDGE_CODES = {
@@ -56,3 +57,9 @@ BLACKLIST = {
 DANGEROUS_LOCATIONS = [
     '/etc/pwd', '/usr/bin', '/usr/lib', '/bin/', '/lib', '/boot', '/dev', '/root'
 ]
+
+CODE_TO_NODE = {
+    1: "Process",
+    2: "File",
+    3: "Socket"
+}

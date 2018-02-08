@@ -62,6 +62,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
             ts = pd.concat([ts, new_entries], ignore_index=True)
             print("Added " + str(new_entries.shape[0]) + " new entries!")
 
+
     print("=======================================================================")
     print("Finished adding nodes based on rules! Added " + str(ts.shape[0]) + " 1-labeled entries in total!")
     print("Now onto 0-labeled nodes...")
@@ -161,3 +162,23 @@ def split_training_set(training_set_path='data/training/training_set.csv',
     print("%d training examples" % len(data_train))
     print("%d test examples" % len(data_test))
     print("==================================")
+
+
+def normalize_features(FVs: np.ndarray):
+    """
+
+        Normalizes the given features set, using the formula:
+
+            x_k = (x_k - mean(x_k)) / var(x_k)
+
+    :param FVs:     The feature vectors, as a np.ndarray
+    :return:        another np.ndarray
+    """
+    cnt_cols = FVs.shape[1]
+
+    for col in range(cnt_cols):
+        var = np.var(FVs[:, col])
+        mean = np.mean(FVs[:, col])
+        FVs[:, col] = (FVs[:, col] - mean) / var
+
+    return FVs
