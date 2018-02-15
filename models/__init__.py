@@ -1,7 +1,9 @@
 from models.logistic_regression import LogisticRegression
+from models.pnn import ProbabilisticNeuralNetwork
 
 _STR_TO_MODEL = {
-    "logistic": LogisticRegression
+    "logistic": LogisticRegression,
+    "pnn": ProbabilisticNeuralNetwork
 }
 
 
@@ -17,10 +19,11 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
     :return:            -
     """
 
+    path = 'data/training/training-set.csv'
+
     model = _STR_TO_MODEL[model_name](
-        train_path=paths[0],
-        test_path=paths[1],
-        log=log
+        data_path=path,
+        evaluate=True
     )
 
     model.setup()

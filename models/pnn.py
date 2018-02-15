@@ -2,9 +2,12 @@ import numpy as np
 import pandas as pd
 from data import utils
 from models import general as gng
+import strings
+from models.model import Model
+from models.exceptions import InvalidModeError
 
 
-class ProbabilisticNeuralNetwork:
+class ProbabilisticNeuralNetwork(Model):
 
     def __init__(self, data_path, evaluate=False):
         """
@@ -14,13 +17,30 @@ class ProbabilisticNeuralNetwork:
         :param evaluate:         Whether we want to evaluate the model or just to use this as a classifier
                                     Default False
         """
+        super().__init__()
+
         self._data_path = data_path
         self._mode = 'EVALUATE' if evaluate else 'CLASSIFY'
         if evaluate:
             self._trainXs, self._trainYs, self._testXs, self._testYs = \
-                utils.read_data_from_csv(data_path, gng.LABEL_COLS, split=True)
+                utils.read_data_from_csv(data_path, gng.LABEL_COLS, split=True, normalize=True)
+
+            self.print_msg(
+                (
+                    strings.HEADLINE_PNN, "", "Data loaded!",
+                    ("%d Train examples", len(self._trainXs)),
+                    ("%d Test examples", len(self._testXs)),
+                )
+            )
+
         else:
-            self._Xs, self._Ys = utils.read_data_from_csv(data_path, gng.LABEL_COLS, split=False)
+            self._Xs, self._Ys = utils.read_data_from_csv(data_path, gng.LABEL_COLS, split=False, normalize=True)
+            self.print_msg(
+                (
+                    strings.HEADLINE_PNN, "", "Data loaded!",
+                    ("%d Examples in the training set", len(self._Xs))
+                )
+            )
 
     def renew_split(self, percentile=.75):
         """
@@ -37,4 +57,78 @@ class ProbabilisticNeuralNetwork:
         self._trainXs, self._trainYs, self._testXs, self._testYs = \
             utils.split_dataframe(full_df, gng.LABEL_COLS, percentile=percentile)
 
-    
+    def evaluate(self):
+        """
+                    Method that evaluates the model. Only available in 'EVALUATE' mode
+        :return:
+        :raises InvalidModeError:       if it is not in evaluate mode
+        """
+        if self._mode != 'EVALUATE':
+            raise InvalidModeError("Invalid mode. Is %s, should be 'EVALUATE'" % self._mode)
+
+        self.print_msg(("", strings.LINE_DELIMITER, "STARTED EVALUATION"))
+
+        trainX_class1_DF = self._trainXs[self._trainYs['SHOW'] == 1]
+        trainX_class2_DF = self._trainXS[self._trainXs['HIDE'] == 1]
+
+        c1Xs = trainX_class1_DF.as_matris()
+        c2Xs = trainX_class2_DF.as_matrix()
+
+        testXs = self._testXs.as_matrix()
+
+        self.print_msg(("", "Splited data into 'SHOW' and 'HIDE' nodes",
+                        ("     %.6f labelled as SHOW", (len(trainX_class1_DF)/ len(self._trainXs))),
+                        ("     %.6f labelled as HIDE", (len(trainX_class2_DF))/ len(self._trainXs))))
+
+        self.print_msg("Starting to calculate the exponentials")
+
+        exp_c1 = [
+            [
+                np.exp(
+                    - np.sum(
+                        [
+                            ((test_value[idx] - c1X[idx]) ** 2) * 0.5
+                            for idx in range(len(test_value))
+                        ]
+                    )
+                ) for c1X in c1Xs
+            ] for test_value in testXs
+        ]
+
+        self.print_msg("Finished for 1st class...")
+
+        exp_c2 = [
+            [
+                np.exp(
+                    - np.sum(
+                        [
+                            ((test_value[idx] - c2X[idx]) ** 2) * 0.5
+                            for idx in range(len(test_value))
+                        ]
+                    )
+                ) for c2X in c2Xs
+            ] for test_value in testXs
+        ]
+
+        Y1s = [np.sum(exp_y1) / (1.0 * len(c1Xs)) for exp_y1 in exp_c1]
+        Y2s = [np.sum(exp_y2) / (1.0 * len(c2Xs)) for exp_y2 in exp_c2]
+
+        self.print_msg("Done calculating exponentials")
+
+        results = [
+            {
+                "SHOW": Y1s[idx] > Y2s[idx],
+                "HIDE": Y2s[idx] > Y1s[idx]
+            } for idx in range(len(Y1s))
+        ]
+
+        print("====================================")
+        print("Got final results!")
+        print("%d entries in the results list" % len(results))
+        print("%.6f classed as HIDE" % float((sum([1 if result["HIDE"] else 0 for result in results]) / len(results))))
+        print("%.6f classed as SHOW" % float((sum([1 if result["SHOW"] else 0 for result in results]) / len(results))))
+        print("===========================")
+
+        print("Now performing the actual evaluation")
+
+        return self.get_stats(results, self._testYs)
