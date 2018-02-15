@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 
 
-def read_data_from_csv(file, label_cols, drop_cols=None):
+def read_data_from_csv(file, label_cols, drop_cols=None, split=True):
     """
 
     :param file:            Path to the csv file where to read the data from
     :param drop_cols:       List of columns to be dropped from the read data. Default None
     :param label_cols:      List of columns that specify labels
+    :param split:           If we also want to split the data into training/testing set or not
 
     :return:                The data, either as an np.ndarray or as a pd.DataFrame
                             By 'the data', I mean a pair (X, Y) where X are the features and Y are the labels
@@ -18,9 +19,12 @@ def read_data_from_csv(file, label_cols, drop_cols=None):
     if drop_cols is not None:
         df = df.drop(drop_cols)
 
-    df_Ys = df[label_cols]
+    if split:
+        return split_dataframe(df, label_cols)
 
-    df_Xs = df[list(set(df.columns.values) - set(label_cols))]
+    df_Ys = df.loc[:, label_cols]
+
+    df_Xs = df.loc[:, list(set(df.columns.values) - set(label_cols))]
 
     return df_Xs, df_Ys
 

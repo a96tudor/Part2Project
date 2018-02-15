@@ -1,0 +1,8 @@
+UNWANTED_COLUMNS = [
+    "UUID",
+    "TIMESTAMP",
+]
+
+LABEL_COLS = [
+    "SHOW", "HIDE"
+]
