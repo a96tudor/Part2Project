@@ -2,13 +2,15 @@ import pandas as pd
 import numpy as np
 
 
-def read_data_from_csv(file, label_cols, drop_cols=None, split=True):
+def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=True):
     """
 
     :param file:            Path to the csv file where to read the data from
     :param drop_cols:       List of columns to be dropped from the read data. Default None
     :param label_cols:      List of columns that specify labels
-    :param split:           If we also want to split the data into training/testing set or not
+    :param split:           If we also want to split the data into training/testing set or not. Default True
+    :param normalize:       If we want the data we read to be normalized, by column. See normalize() for more detail.
+                                Default True
 
     :return:                The data, either as an np.ndarray or as a pd.DataFrame
                             By 'the data', I mean a pair (X, Y) where X are the features and Y are the labels
@@ -18,6 +20,11 @@ def read_data_from_csv(file, label_cols, drop_cols=None, split=True):
 
     if drop_cols is not None:
         df = df.drop(drop_cols)
+
+    if normalize:
+        df1 = df.loc[:, label_cols]
+        df2 = normalize_df(df.loc[:, list(set(df.columns.values) - set(label_cols))])
+        df = pd.concat([df1, df2], axis=1)
 
     if split:
         return split_dataframe(df, label_cols)
@@ -61,6 +68,15 @@ def split_dataframe(df, label_cols, percentile=.75):
     return df_1st_Xs, df_1st_Ys, \
            df_2nd_Xs, df_2nd_Ys
 
+
+def normalize_df(df):
+    """
+
+    :param df:      The dataframe we want to normalize
+    :return:        The normalized dataframe
+    """
+
+    return df
 
 
 
