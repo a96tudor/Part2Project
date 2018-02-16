@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.utils import shuffle
 
 
 def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=True):
@@ -123,3 +124,16 @@ def split_dataframe(df, label_cols, test_part, percentile=0.75):
     trainXs = trainDF.loc[:, X_cols]
 
     return trainXs, trainYs, testXs, testYs
+
+
+def shuffle_csv(csv_path):
+    """
+        Functions that takes a path to a csv, shuffles it and then writes it back in the same file
+
+    :param csv_path:            The csv we want to shuffle
+    :return:                    -
+    """
+    df = pd.read_csv(csv_path)
+    df = shuffle(df)
+    df.to_csv(csv_path)
+
