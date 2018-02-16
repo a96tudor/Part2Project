@@ -187,3 +187,6 @@ data/tmp
 testing-stuff.py
 data/graphics
 graphics.py
+data/stats
+test.json
+
