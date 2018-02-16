@@ -29,11 +29,11 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
 
     results = dict()
 
-    for idx in range(int(100/25)):
+    for idx in range(int(100/25) - 1):
         results[idx] = model.evaluate()
         print("Iteration: %d" % (idx+1))
         print(results[idx])
-        model.renew_split(idx+1)
+        model.renew_split(idx+2)
 
     path_results = 'data/results/' + model_name + "/1.json"
 
