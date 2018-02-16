@@ -42,11 +42,12 @@ class ProbabilisticNeuralNetwork(Model):
                 )
             )
 
-    def renew_split(self, percentile=.75):
+    def renew_split(self, test_part, percentile=.75):
         """
             Method that renews the current split on the data used by the model
 
         :param percentile:      How many entries should be in the train part
+        :param test_part:       The test_part^th (1-percentile) section of the df will be used as the test set
         :return:                -
         """
         full_train = pd.concat([self._trainXs, self._trainYs], axis=1)
@@ -55,7 +56,7 @@ class ProbabilisticNeuralNetwork(Model):
         full_df = pd.concat([full_train, full_test], axis=0, ignore_index=True)
 
         self._trainXs, self._trainYs, self._testXs, self._testYs = \
-            utils.split_dataframe(full_df, gng.LABEL_COLS, percentile=percentile)
+            utils.split_dataframe(full_df, gng.LABEL_COLS, test_part, percentile=percentile)
 
     def evaluate(self):
         """
