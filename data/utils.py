@@ -36,7 +36,7 @@ def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=T
     return df_Xs, df_Ys
 
 
-def split_dataframe(df, label_cols, percentile=.75):
+def random_split_dataframe(df, label_cols, percentile=.75):
     """
 
     :param df:              the dataframe we want to split
@@ -76,8 +76,45 @@ def normalize_df(df):
     :return:        The normalized dataframe
     """
 
+    #TODO: IMPLEMENT THIS
     return df
 
 
+def split_dataframe(df, label_cols, test_part, percentile=0.75):
+    """
 
+    :param df:                  The DataFrame we want to split
+    :param label_cols:          The names of the columns that represent  the labels
+    :param test_part:           The test_part^th (1-percentile) section of the df will be used as the test set
+    :param percentile:          What percent of the entries is in the training set
+    :return:                    4 dataframes, representing:
 
+                                    1. training features
+                                    2. training labels
+                                    3. test features
+                                    4. test labels
+    """
+    test_left =  int((1-percentile)*(test_part-1)*len(df))
+    test_right = int((1-percentile)*test_part*len(df) - 1)
+
+    testDF = df.iloc[test_left:test_right, :]
+
+    if test_left == 0:
+        trainDF = df.iloc[test_right+1:, :]
+    elif test_right == len(df) - 1:
+        trainDF = df.iloc[:test_left-1, :]
+    else:
+        df1 = df.iloc[:test_left-1, :]
+        df2 = df.iloc[test_right+1, :]
+
+        trainDF = pd.concat(df1, df2, ignore_index=True)
+
+    X_cols = list(set(df.columns.values) - set(label_cols))
+
+    testYs = testDF.loc[:, label_cols]
+    testXs = testDF.loc[:, X_cols]
+
+    trainYs = trainDF.loc[:, label_cols]
+    trainXs = trainDF.loc[:, X_cols]
+
+    return trainXs, trainYs, testXs, testYs
