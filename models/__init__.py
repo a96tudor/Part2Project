@@ -1,5 +1,6 @@
 from models.logistic_regression import LogisticRegression
 from models.pnn import ProbabilisticNeuralNetwork
+import json
 
 _STR_TO_MODEL = {
     "logistic": LogisticRegression,
@@ -19,11 +20,22 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
     :return:            -
     """
 
-    path = 'data/training/training-set.csv'
+    path = 'data/training/training_set.csv'
 
     model = _STR_TO_MODEL[model_name](
         data_path=path,
         evaluate=True
     )
 
-    model.setup()
+    results = dict()
+
+    for idx in range(10):
+        results[idx] = model.evaluate()
+        print("Iteration: %d" % idx)
+        print(results[idx])
+        model.renew_split()
+
+    path_results = 'data/results/' + model_name + "/1.json"
+
+    with open(path_results, 'w') as fout:
+        json.dump(results, fout)

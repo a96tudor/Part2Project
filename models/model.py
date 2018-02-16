@@ -11,12 +11,13 @@ class Model:
         :param args:        the messages to be printed, line by line
         :return:            -
         """
-        for args in args:
-            if isinstance(args, str):
-                print(args)
+        for arg in args[0]:
+            if isinstance(arg, str):
+                print(arg)
             else:
                 # It is a tuple
-                print(args[0] % args[1])
+
+                print(arg[0] % arg[1])
 
     def get_stats(self, results, correctYs):
         """
@@ -31,33 +32,41 @@ class Model:
         """
         stats = dict()
 
+        print(len(results), len(correctYs))
+
         stats["correct_classifications"] = 0
         stats["true_positive"] = 0
         stats["true_negative"] = 0
         stats["false_positive"] = 0
         stats["false_negative"] = 0
 
+        print(correctYs.columns.values)
+
         for idx in range(len(results)):
 
-            if correctYs[idx, 'HIDE'] == 1 and results[idx]['HIDE']:
+            if correctYs.iloc[idx,:].loc['HIDE'] == 1 and results[idx]['HIDE']:
                 # IT'S A CORRECT HIDE CLASSIFICATION
                 stats["correct_classifications"] += 1
                 stats["true_negative"] += 1
                 continue
 
-            if correctYs[idx, 'SHOW'] == 1 and results[idx]['SHOW']:
+            if correctYs.iloc[idx,:].loc['SHOW'] == 1 and results[idx]['SHOW']:
                 # IT'S A CORRECT SHOW CLASSIFICATION
                 stats["correct_classifications"] += 1
                 stats["true_positive"] += 1
                 continue
 
-            if correctYs[idx, 'HIDE'] == 1 and results[idx]['SHOW']:
+            print(results[idx])
+
+            if results[idx]['SHOW']:
                 # FALSE POSITIVE
                 stats["false_positive"] += 1
+                continue
 
-            if correctYs[idx, 'SHOW'] == 1 and results[idx]['HIDE']:
+            if results[idx]['HIDE']:
                 # FALSE NEGATIVE
                 stats["false_negative"] += 1
+                continue
 
         stats["precision"] = stats["true_positive"] / (stats["true_positive"] + stats["false_positive"])
         stats["recall"] = stats["true_positive"] / (stats["true_positive"] + stats["false_negative"])

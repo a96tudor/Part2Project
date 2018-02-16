@@ -23,7 +23,7 @@ class ProbabilisticNeuralNetwork(Model):
         self._mode = 'EVALUATE' if evaluate else 'CLASSIFY'
         if evaluate:
             self._trainXs, self._trainYs, self._testXs, self._testYs = \
-                utils.read_data_from_csv(data_path, gng.LABEL_COLS, split=True, normalize=True)
+                utils.read_data_from_csv(data_path, gng.LABEL_COLS, drop_cols=gng.UNWANTED_COLUMNS, split=True)
 
             self.print_msg(
                 (
@@ -34,7 +34,7 @@ class ProbabilisticNeuralNetwork(Model):
             )
 
         else:
-            self._Xs, self._Ys = utils.read_data_from_csv(data_path, gng.LABEL_COLS, split=False, normalize=True)
+            self._Xs, self._Ys = utils.read_data_from_csv(data_path, gng.LABEL_COLS, split=False)
             self.print_msg(
                 (
                     strings.HEADLINE_PNN, "", "Data loaded!",
@@ -52,7 +52,7 @@ class ProbabilisticNeuralNetwork(Model):
         full_train = pd.concat([self._trainXs, self._trainYs], axis=1)
         full_test = pd.concat([self._testXs, self._testYs], axis=1)
 
-        full_df = pd.concat([full_train, full_test], axis=0)
+        full_df = pd.concat([full_train, full_test], axis=0, ignore_index=True)
 
         self._trainXs, self._trainYs, self._testXs, self._testYs = \
             utils.split_dataframe(full_df, gng.LABEL_COLS, percentile=percentile)
@@ -69,18 +69,20 @@ class ProbabilisticNeuralNetwork(Model):
         self.print_msg(("", strings.LINE_DELIMITER, "STARTED EVALUATION"))
 
         trainX_class1_DF = self._trainXs[self._trainYs['SHOW'] == 1]
-        trainX_class2_DF = self._trainXS[self._trainXs['HIDE'] == 1]
+        trainX_class2_DF = self._trainXs[self._trainYs['HIDE'] == 1]
 
-        c1Xs = trainX_class1_DF.as_matris()
+        c1Xs = trainX_class1_DF.as_matrix()
         c2Xs = trainX_class2_DF.as_matrix()
 
         testXs = self._testXs.as_matrix()
+
+        print(self._testYs.columns.values)
 
         self.print_msg(("", "Splited data into 'SHOW' and 'HIDE' nodes",
                         ("     %.6f labelled as SHOW", (len(trainX_class1_DF)/ len(self._trainXs))),
                         ("     %.6f labelled as HIDE", (len(trainX_class2_DF))/ len(self._trainXs))))
 
-        self.print_msg("Starting to calculate the exponentials")
+        print("Starting to calculate the exponentials")
 
         exp_c1 = [
             [
@@ -95,7 +97,7 @@ class ProbabilisticNeuralNetwork(Model):
             ] for test_value in testXs
         ]
 
-        self.print_msg("Finished for 1st class...")
+        print("Finished for 1st class...")
 
         exp_c2 = [
             [
@@ -113,11 +115,11 @@ class ProbabilisticNeuralNetwork(Model):
         Y1s = [np.sum(exp_y1) / (1.0 * len(c1Xs)) for exp_y1 in exp_c1]
         Y2s = [np.sum(exp_y2) / (1.0 * len(c2Xs)) for exp_y2 in exp_c2]
 
-        self.print_msg("Done calculating exponentials")
+        print("Done calculating exponentials")
 
         results = [
             {
-                "SHOW": Y1s[idx] > Y2s[idx],
+                "SHOW": Y1s[idx] >= Y2s[idx],
                 "HIDE": Y2s[idx] > Y1s[idx]
             } for idx in range(len(Y1s))
         ]

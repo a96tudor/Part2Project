@@ -16,8 +16,10 @@ def read_data_from_csv(file, label_cols, drop_cols=None, split=True):
 
     df = pd.read_csv(file)
 
+    print(df.iloc[0,:].loc['HIDE'])
+
     if drop_cols is not None:
-        df = df.drop(drop_cols)
+        df = df.drop(columns=drop_cols)
 
     if split:
         return split_dataframe(df, label_cols)
@@ -53,10 +55,13 @@ def split_dataframe(df, label_cols, percentile=.75):
     idx_1st = np.random.choice(rows_cnt, size=rows_cnt_1st)
     idx_2nd = list(set(range(rows_cnt)) - set(idx_1st))
 
-    df_1st_Xs = df.iloc[idx_1st, X_cols]
-    df_1st_Ys = df.iloc[idx_1st, Y_cols]
-    df_2nd_Xs = df.iloc[idx_2nd, X_cols]
-    df_2nd_Ys = df.iloc[idx_2nd, Y_cols]
+    df_1st_Xs = df.loc[idx_1st, X_cols]
+    df_1st_Ys = df.loc[idx_1st, Y_cols]
+    df_2nd_Xs = df.loc[idx_2nd, X_cols]
+    df_2nd_Ys = df.loc[idx_2nd, Y_cols]
+
+    if list(set(df_1st_Xs.index.values).intersection(set(df_2nd_Xs.index.values))) != []:
+        print("ERROR: NOT DISJOINT!")
 
     return df_1st_Xs, df_1st_Ys, \
            df_2nd_Xs, df_2nd_Ys
