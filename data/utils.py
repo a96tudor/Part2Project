@@ -41,6 +41,7 @@ def random_split_dataframe(df, label_cols, percentile=.75):
     """
 
     :param df:              the dataframe we want to split
+    :label_cols:            column names that represent labels (i.e. the Ys in the output)
     :param percentile:      the % of the ndarray that will still be in the 1st part. Default .75
     :return:                4 dataframes, representing:
 
@@ -121,14 +122,12 @@ def split_dataframe(df, label_cols, test_part, percentile=0.75):
     return trainXs, trainYs, testXs, testYs
 
 
-def shuffle_csv(csv_path):
+def shuffle_df(df, iter=1, axis=0):
     """
-        Functions that takes a path to a csv, shuffles it and then writes it back in the same file
+        Functions that takes a path to a csv, shuffles and returns the content as a
 
-    :param csv_path:            The csv we want to shuffle
+    :param df:                  Dataframe we want to shuffle
     :return:                    -
     """
-    df = pd.read_csv(csv_path)
-    df = shuffle(df)
-    df.to_csv(csv_path)
+    return shuffle(df).reset_index(drop=True)
 

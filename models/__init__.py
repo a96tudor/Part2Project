@@ -1,4 +1,6 @@
 from models.logistic_regression import LogisticRegression
+from data import utils
+import pandas as pd
 
 _STR_TO_MODEL = {
     "logistic": LogisticRegression
@@ -23,4 +25,8 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
         log=log
     )
 
-    model.setup()
+    #model.setup()
+
+    df = pd.read_csv('data/training/training_set.csv')
+    df = utils.shuffle_df(df)
+    print(df.head())
