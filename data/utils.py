@@ -58,7 +58,7 @@ def random_split_dataframe(df, label_cols, percentile=.75):
     Y_cols = label_cols
 
     # GETTING RANDOM INDEXES FOR 1st part
-    idx_1st = np.random.choice(rows_cnt, size=rows_cnt_1st)
+    idx_1st = np.random.choice(rows_cnt, size=rows_cnt_1st, replace=False)
     idx_2nd = list(set(range(rows_cnt)) - set(idx_1st))
 
     df_1st_Xs = df.iloc[idx_1st, X_cols]
