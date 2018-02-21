@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.utils import shuffle
 
 
-def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=True):
+def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=True, shuffle=True):
     """
     :param file:            Path to the csv file where to read the data from
     :param drop_cols:       List of columns to be dropped from the read data. Default None
@@ -11,6 +11,7 @@ def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=T
     :param split:           If we also want to split the data into training/testing set or not. Default True
     :param normalize:       If we want the data we read to be normalized, by column. See normalize() for more detail.
                                 Default True
+    :param shuffle:         If we want the dataframe to be shuffled, as well. Default True
     :return:                The data, either as an np.ndarray or as a pd.DataFrame
                             By 'the data', I mean a pair (X, Y) where X are the features and Y are the labels
     """
@@ -18,6 +19,9 @@ def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=T
     df = pd.read_csv(file)
 
     print(df.iloc[0,:].loc['HIDE'])
+
+    if shuffle:
+        df = shuffle_df(df)
 
     if drop_cols is not None:
         df = df.drop(columns=drop_cols)
@@ -28,7 +32,7 @@ def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=T
         df = pd.concat([df1, df2], axis=1)
 
     if split:
-        return random_split_dataframe(df, label_cols, test_part=1)
+        return split_dataframe(df, test_part=1, label_cols=label_cols)
 
     df_Ys = df.loc[:, label_cols]
 
@@ -94,8 +98,8 @@ def split_dataframe(df, label_cols, test_part, percentile=0.75):
                                     3. test features
                                     4. test labels
     """
-    test_left =  int((1-percentile)*(test_part-1)*len(df))
-    test_right = int((1-percentile)*test_part*len(df) - 1)
+    test_left = int((1-percentile)*(test_part-1)*len(df))
+    test_right = min(int((1-percentile)*test_part*len(df) - 1), len(df) - 1)
 
     testDF = df.iloc[test_left:test_right, :]
 
@@ -106,8 +110,7 @@ def split_dataframe(df, label_cols, test_part, percentile=0.75):
     else:
         df1 = df.iloc[:test_left-1, :]
         df2 = df.iloc[test_right+1, :]
-
-        trainDF = pd.concat(df1, df2, ignore_index=True)
+        trainDF = pd.concat([df1, df2], ignore_index=True)
 
     X_cols = list(set(df.columns.values) - set(label_cols))
 
@@ -120,7 +123,7 @@ def split_dataframe(df, label_cols, test_part, percentile=0.75):
     return trainXs, trainYs, testXs, testYs
 
 
-def shuffle_df(df, iter=1, axis=0):
+def shuffle_df(df):
     """
         Functions that takes a path to a csv, shuffles and returns the content as a
     :param df:                  Dataframe we want to shuffle
