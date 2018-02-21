@@ -8,6 +8,8 @@ _STR_TO_MODEL = {
     "pnn": ProbabilisticNeuralNetwork
 }
 
+NUM_ITER = 20
+
 
 def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=False):
     """
@@ -32,13 +34,21 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
 
     results = dict()
 
-    for idx in range(int(100/25)):
-        results[idx] = model.evaluate()
+    results['methodology'] = 'Random Cross Validation'
+    results['iterations'] = NUM_ITER
+
+    results['metrics'] = dict()
+
+    for idx in range(NUM_ITER):
+        results['metrics'][idx] = model.evaluate()
         print("Iteration: %d" % (idx+1))
-        print(results[idx])
         model.renew_split(idx+1)
 
     path_results = 'data/results/' + model_name + "/1.json"
+
+    results['summary'] = {
+        key: float(sum([results['metrics'][idx][key] for idx in range(NUM_ITER)])/NUM_ITER)
+                for key in results['metrics'][0]}
 
     with open(path_results, 'w') as fout:
         json.dump(results, fout)
