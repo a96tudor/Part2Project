@@ -30,17 +30,10 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
         evaluate=True
     )
 
-    utils.shuffle_csv(path)
+    #utils.shuffle_csv(path)
 
     results = dict()
 
-<<<<<<< HEAD
-    for idx in range(int(100/25) - 1):
-        results[idx] = model.evaluate()
-        print("Iteration: %d" % (idx+1))
-        print(results[idx])
-        model.renew_split(idx+2)
-=======
     results['methodology'] = 'Random Cross Validation'
     results['iterations'] = NUM_ITER
 
@@ -50,7 +43,6 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
         results['metrics'][idx] = model.evaluate()
         print("Iteration: %d" % (idx+1))
         model.renew_split(idx+1)
->>>>>>> models/general
 
     path_results = 'data/results/' + model_name + "/1.json"
 
