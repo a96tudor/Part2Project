@@ -43,6 +43,7 @@ class ProductionConfig(Config):
     """
     DEBUG = False
     DATABASE_NAME = 'production'
+    TESTING = False
 
 
 APP_CONFIG = {
