@@ -1,6 +1,6 @@
 UNWANTED_COLUMNS = [
     "UUID",
-    "TIMESTAMP",
+    "TIMESTAMP"
 ]
 
 LABEL_COLS = [
