@@ -28,7 +28,7 @@ def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=T
         df = pd.concat([df1, df2], axis=1)
 
     if split:
-        return split_dataframe(df, label_cols, test_part=1)
+        return random_split_dataframe(df, label_cols, test_part=1)
 
     df_Ys = df.loc[:, label_cols]
 
