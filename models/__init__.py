@@ -1,4 +1,6 @@
 from models.logistic_regression import LogisticRegression
+from data import utils
+import pandas as pd
 from models.pnn import ProbabilisticNeuralNetwork
 import json
 from data import utils
@@ -30,7 +32,8 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
         evaluate=True
     )
 
-    #utils.shuffle_csv(path)
+
+    df = pd.read_csv('data/training/training_set.csv')
 
     results = dict()
 
