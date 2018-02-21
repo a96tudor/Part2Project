@@ -5,14 +5,12 @@ from sklearn.utils import shuffle
 
 def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=True):
     """
-
     :param file:            Path to the csv file where to read the data from
     :param drop_cols:       List of columns to be dropped from the read data. Default None
     :param label_cols:      List of columns that specify labels
     :param split:           If we also want to split the data into training/testing set or not. Default True
     :param normalize:       If we want the data we read to be normalized, by column. See normalize() for more detail.
                                 Default True
-
     :return:                The data, either as an np.ndarray or as a pd.DataFrame
                             By 'the data', I mean a pair (X, Y) where X are the features and Y are the labels
     """
@@ -41,11 +39,10 @@ def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=T
 
 def random_split_dataframe(df, label_cols, percentile=.75):
     """
-
     :param df:              the dataframe we want to split
+    :label_cols:            column names that represent labels (i.e. the Ys in the output)
     :param percentile:      the % of the ndarray that will still be in the 1st part. Default .75
     :return:                4 dataframes, representing:
-
                                 1. 1st part features
                                 2. 1st part labels
                                 3. 2nd part features
@@ -60,7 +57,7 @@ def random_split_dataframe(df, label_cols, percentile=.75):
     Y_cols = label_cols
 
     # GETTING RANDOM INDEXES FOR 1st part
-    idx_1st = np.random.choice(rows_cnt, size=rows_cnt_1st)
+    idx_1st = np.random.choice(rows_cnt, size=rows_cnt_1st, replace=False)
     idx_2nd = list(set(range(rows_cnt)) - set(idx_1st))
 
     df_1st_Xs = df.loc[idx_1st, X_cols]
@@ -77,7 +74,6 @@ def random_split_dataframe(df, label_cols, percentile=.75):
 
 def normalize_df(df):
     """
-
     :param df:      The dataframe we want to normalize
     :return:        The normalized dataframe
     """
@@ -88,13 +84,11 @@ def normalize_df(df):
 
 def split_dataframe(df, label_cols, test_part, percentile=0.75):
     """
-
     :param df:                  The DataFrame we want to split
     :param label_cols:          The names of the columns that represent  the labels
     :param test_part:           The test_part^th (1-percentile) section of the df will be used as the test set
     :param percentile:          What percent of the entries is in the training set
     :return:                    4 dataframes, representing:
-
                                     1. training features
                                     2. training labels
                                     3. test features
@@ -126,14 +120,10 @@ def split_dataframe(df, label_cols, test_part, percentile=0.75):
     return trainXs, trainYs, testXs, testYs
 
 
-def shuffle_csv(csv_path):
+def shuffle_df(df, iter=1, axis=0):
     """
-        Functions that takes a path to a csv, shuffles it and then writes it back in the same file
-
-    :param csv_path:            The csv we want to shuffle
+        Functions that takes a path to a csv, shuffles and returns the content as a
+    :param df:                  Dataframe we want to shuffle
     :return:                    -
     """
-    df = pd.read_csv(csv_path)
-    df = shuffle(df)
-    df.to_csv(csv_path)
-
+    return shuffle(df).reset_index(drop=True)
