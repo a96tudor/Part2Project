@@ -131,9 +131,6 @@ def shuffle_df(df):
     """
     return shuffle(df).reset_index(drop=True)
 
-
-
-
 def print_dict(data):
     """
 
@@ -142,3 +139,7 @@ def print_dict(data):
     """
     for key in data:
         print("%s: %.5f" % (str(key), float(data[key])))
+
+
+
+
