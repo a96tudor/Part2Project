@@ -78,6 +78,8 @@ class Model:
                          stats["true_negative"] + stats["false_positive"], \
                          stats["true_positive"] + stats["false_negative"]
 
+        print("%d tp %d fp %d tn %d fn" % (stats['true_positive'], stats['false_positive'], stats['true_negative'], stats['false_negative']))
+
         stats["mcc_score"] = (stats["true_positive"] * stats["true_negative"] - stats["false_negative"] * stats["false_positive"]) \
                              / np.sqrt(s1 * s2 * s3 * s4)
 

@@ -86,7 +86,7 @@ def normalize_df(df):
     return df
 
 
-def split_dataframe(df, label_cols, test_part, percentile=0.75):
+def split_dataframe(df, label_cols, test_part, percentile=0.80):
     """
     :param df:                  The DataFrame we want to split
     :param label_cols:          The names of the columns that represent  the labels
@@ -130,3 +130,15 @@ def shuffle_df(df):
     :return:                    -
     """
     return shuffle(df).reset_index(drop=True)
+
+
+
+
+def print_dict(data):
+    """
+
+    :param data:       The dictionary we want to print
+    :return:
+    """
+    for key in data:
+        print("%s: %.5f" % (str(key), float(data[key])))
