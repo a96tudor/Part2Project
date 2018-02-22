@@ -189,4 +189,4 @@ data/graphics
 graphics.py
 data/stats
 test.json
-
+data/results/
