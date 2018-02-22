@@ -46,7 +46,7 @@ class Model:
 
             if not results[idx]['HIDE'] and not results[idx]['SHOW']:
                 # If this happens, we want to show the node just to be sure that it's all ok
-                results['SHOW'] = True
+                results[idx]['SHOW'] = True
 
             if correctYs.iloc[idx,:].loc['HIDE'] == 1 and results[idx]['HIDE']:
                 # IT'S A CORRECT HIDE CLASSIFICATION

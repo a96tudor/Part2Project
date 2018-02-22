@@ -86,7 +86,7 @@ def normalize_df(df):
     return df
 
 
-def split_dataframe(df, label_cols, test_part, percentile=0.80):
+def split_dataframe(df, label_cols, test_part, percentile=0.90):
     """
     :param df:                  The DataFrame we want to split
     :param label_cols:          The names of the columns that represent  the labels
@@ -98,8 +98,13 @@ def split_dataframe(df, label_cols, test_part, percentile=0.80):
                                     3. test features
                                     4. test labels
     """
+    print()
+    print("Starting new split: \n    Dataframe length: %d \n    Test section: %d" % (len(df), test_part))
     test_left = int((1-percentile)*(test_part-1)*len(df))
     test_right = min(int((1-percentile)*test_part*len(df) - 1), len(df) - 1)
+
+    print("Test interval: %d - %d" % (test_left, test_right))
+    print()
 
     testDF = df.iloc[test_left:test_right, :]
 
@@ -109,8 +114,10 @@ def split_dataframe(df, label_cols, test_part, percentile=0.80):
         trainDF = df.iloc[:test_left-1, :]
     else:
         df1 = df.iloc[:test_left-1, :]
-        df2 = df.iloc[test_right+1, :]
-        trainDF = pd.concat([df1, df2], ignore_index=True)
+        df2 = df.iloc[test_right+1:, :]
+        trainDF = pd.concat([df1, df2], axis=0, ignore_index=True)
+
+    assert(len(trainDF) + len(testDF) <= len(df))
 
     X_cols = list(set(df.columns.values) - set(label_cols))
 

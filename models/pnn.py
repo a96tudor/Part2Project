@@ -55,8 +55,14 @@ class ProbabilisticNeuralNetwork(Model):
 
         full_df = pd.concat([full_train, full_test], axis=0, ignore_index=True)
 
+        print("**%d**" % len(full_df))
+
         self._trainXs, self._trainYs, self._testXs, self._testYs = \
             utils.split_dataframe(full_df, gng.LABEL_COLS, test_part=test_part, percentile=percentile)
+
+        print("New data split!")
+        print("%d TrainX %d TrainY" % (len(self._trainXs), len(self._trainYs)))
+        print("%d TestX %d TestY" % (len(self._testXs), len(self._testYs)))
 
     def evaluate(self):
         """
