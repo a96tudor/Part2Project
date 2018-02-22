@@ -42,7 +42,7 @@ def evaluate_model(args):
     """
     print("Evaluating...")
 
-    evaluate(args['model'], args['paths'], args['log'])
+    evaluate('pnn', args['paths'], args['log'])
 
 def classify(args):
     """
