@@ -82,7 +82,7 @@ def normalize_df(df):
     return df
 
 
-def split_dataframe(df, label_cols, test_part, percentile=0.75):
+def split_dataframe(df, label_cols, test_part, percentile=0.90):
     """
 
     :param df:                  The DataFrame we want to split
@@ -130,4 +130,5 @@ def shuffle_df(df, iter=1, axis=0):
     :return:                    -
     """
     return shuffle(df).reset_index(drop=True)
+
 
