@@ -17,13 +17,11 @@ K_FOLD_PERCENTILE = .80
 
 def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=False):
     """
-
     :param model_name:   The model we want to evaluate, as a string
                             It can be:
                                 - logistic
     :param paths:       (training_set path, test_test path) touple
     :param log:         Whether we want to log everything
-
     :return:            -
     """
 
@@ -33,7 +31,6 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
         data_path=path,
         evaluate=True
     )
-
 
     df = pd.read_csv('data/training/training_set.csv')
 
