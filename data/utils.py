@@ -3,6 +3,58 @@ import numpy as np
 from sklearn.utils import shuffle
 
 
+def get_features_and_labels(df, label_cols):
+    """
+        Function that splits a given dataframe into features and labels
+
+    :param df:              The dataframe we want to split
+    :param label_cols:      List of columns that specify labels
+    :return:                X = the features matrix
+                            Y = the labels vector
+    """
+
+    feature_cols = get_diff(df.columns.values, label_cols)
+
+    return df.loc[:, feature_cols], df.loc[:, label_cols]
+
+
+def get_diff(l1, l2):
+    """
+        Function that computes the difference between two lists
+
+    :param l1:       The list we want to substract from
+    :param l2:       The list we want to substract
+    :return:         The resulting list
+    """
+    return list(set(l1) - set(l2))
+
+
+def read_csv(path, label_cols, drop_cols=None, normalize=True):
+    """
+
+    :param path:            The path where we want to read the data from
+    :param label_cols:      List of columns that specify labels
+    :param drop_cols:       List of columns to be dropped from the read data. Default None
+    :param normalize:       If we want the data we read to be normalized, by column. See normalize() for more detail.
+                                Default True
+    :return:                The dataframe we read
+    """
+
+    df = pd.read_csv(path)
+
+    df = shuffle_df(df)
+
+    if drop_cols is not None:
+        df = df.drop(columns=drop_cols)
+
+    if normalize:
+        feature_cols = get_diff(df.columns.values, label_cols)
+        df.loc[:, feature_cols] = normalize_df(df.loc[:, feature_cols])
+
+    print(df.head)
+
+    return df
+
 def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=True, shuffle=True):
     """
     :param file:            Path to the csv file where to read the data from
@@ -18,7 +70,7 @@ def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=T
 
     df = pd.read_csv(file)
 
-    print(df.iloc[0,:].loc['HIDE'])
+    print(df.iloc[0, :].loc['HIDE'])
 
     if shuffle:
         df = shuffle_df(df)
@@ -86,7 +138,7 @@ def normalize_df(df):
     return df
 
 
-def split_dataframe(df, label_cols, test_part, percentile=0.80):
+def split_dataframe(df, label_cols, test_part, percentile=0.90):
     """
     :param df:                  The DataFrame we want to split
     :param label_cols:          The names of the columns that represent  the labels
@@ -110,17 +162,15 @@ def split_dataframe(df, label_cols, test_part, percentile=0.80):
     else:
         df1 = df.iloc[:test_left-1, :]
         df2 = df.iloc[test_right+1, :]
+        
         trainDF = pd.concat([df1, df2], ignore_index=True)
 
     X_cols = list(set(df.columns.values) - set(label_cols))
 
-    testYs = testDF.loc[:, label_cols]
-    testXs = testDF.loc[:, X_cols]
+    trainX, trainY = get_features_and_labels(trainDF, label_cols)
+    testX, testY = get_features_and_labels(testDF, label_cols)
 
-    trainYs = trainDF.loc[:, label_cols]
-    trainXs = trainDF.loc[:, X_cols]
-
-    return trainXs, trainYs, testXs, testYs
+    return trainX, trainY, testX, testY
 
 
 def shuffle_df(df):
