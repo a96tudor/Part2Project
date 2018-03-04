@@ -12,7 +12,7 @@ _STR_TO_MODEL = {
 
 NUM_ITER = 20
 
-K_FOLD_PERCENTILE = .80
+K_FOLD_PERCENTILE = .90
 
 
 def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=False):
@@ -44,13 +44,14 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
 
     NUM_ITER = int(1/(1-K_FOLD_PERCENTILE))
 
-    for idx in range(NUM_ITER):
+    for idx in range(NUM_ITER + 1):
         results['metrics'][idx] = model.evaluate()
         print("Iteration: %d" % (idx+1))
+
         utils.print_dict(results['metrics'][idx])
         model.renew_split(idx+1, percentile=K_FOLD_PERCENTILE)
 
-    path_results = 'data/results/' + model_name + "/2.json"
+    path_results = 'data/results/' + model_name + "/3.json"
 
     results['summary'] = {
         key: float(sum([results['metrics'][idx][key] for idx in range(NUM_ITER)])/NUM_ITER)

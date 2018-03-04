@@ -150,8 +150,13 @@ def split_dataframe(df, label_cols, test_part, percentile=0.90):
                                     3. test features
                                     4. test labels
     """
+    print()
+    print("Starting new split: \n    Dataframe length: %d \n    Test section: %d" % (len(df), test_part))
     test_left = int((1-percentile)*(test_part-1)*len(df))
     test_right = min(int((1-percentile)*test_part*len(df) - 1), len(df) - 1)
+
+    print("Test interval: %d - %d" % (test_left, test_right))
+    print()
 
     testDF = df.iloc[test_left:test_right, :]
 
@@ -160,12 +165,11 @@ def split_dataframe(df, label_cols, test_part, percentile=0.90):
     elif test_right == len(df) - 1:
         trainDF = df.iloc[:test_left-1, :]
     else:
-        df1 = df.iloc[:test_left-1, :]
+        df1 = df.iloc[:test_left-1, :]        
         df2 = df.iloc[test_right+1, :]
         
-        trainDF = pd.concat([df1, df2], ignore_index=True)
-
-    X_cols = list(set(df.columns.values) - set(label_cols))
+        df2 = df.iloc[test_right+1:, :]
+        trainDF = pd.concat([df1, df2], axis=0, ignore_index=True)
 
     trainX, trainY = get_features_and_labels(trainDF, label_cols)
     testX, testY = get_features_and_labels(testDF, label_cols)
@@ -181,7 +185,6 @@ def shuffle_df(df):
     """
     return shuffle(df).reset_index(drop=True)
 
-
 def print_dict(data):
     """
 
@@ -190,4 +193,7 @@ def print_dict(data):
     """
     for key in data:
         print("%s: %.5f" % (str(key), float(data[key])))
+
+
+
 
