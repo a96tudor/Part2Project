@@ -57,10 +57,12 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
         print("Adding nodes defined by "+rule+"... ")
         with open(rules_path + rule + '.cyp') as f:
             rule_query = f.read()
-            new_entries = _CURRENT_RULES[rule](db.execute_query(rule_query))
+            result = db.execute_query(rule_query)[:cnst.MAX_ENTRIES_PER_RULE]
+            print("     Loaded %d results from the database" % len(result))
+            new_entries = _CURRENT_RULES[rule](result)
 
             ts = pd.concat([ts, new_entries], ignore_index=True)
-            print("Added " + str(new_entries.shape[0]) + " new entries!")
+            print("     Added " + str(new_entries.shape[0]) + " new entries!")
 
 
     print("=======================================================================")
