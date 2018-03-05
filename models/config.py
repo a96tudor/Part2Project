@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-
+from models.evaluation import metrics
 
 class ModelConfig(object):
     """
@@ -58,15 +58,15 @@ class EvalConfig(ModelConfig):
     SHUFFLE = True  # We want to shuffle the data first to get more accurate results
     NORMALIZE = True  # We want to normalize the data first
     METRICS = {
-        "accuracy": None,
-        "mcc": None,
-        "f1": None,
-        "tp": None,
-        "tn": None,
-        "fp": None,
-        "fn": None,
-        "precision": None,
-        "recall": None
+        "accuracy": metrics.accuracy,
+        "mcc": metrics.mcc,
+        "f1": metrics.f1,
+        "tp": metrics.true_positives,
+        "tn": metrics.true_negatives,
+        "fp": metrics.false_positives,
+        "fn": metrics.false_negatives,
+        "precision": metrics.precision,
+        "recall": metrics.recall
     }
     RESULTS_PATH = 'models/eval/results/'
     THRESHOLD = .5  # Probability above which we want to classify the node as 'SHOW'
