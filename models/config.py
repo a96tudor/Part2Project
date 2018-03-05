@@ -18,6 +18,7 @@ limitations under the License.
 """
 from models.evaluation import metrics
 
+
 class ModelConfig(object):
     """
         'Mother' class for model configuration
