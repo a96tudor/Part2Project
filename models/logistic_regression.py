@@ -4,7 +4,7 @@ from keras.layers import Dense
 from keras.optimizers import Optimizer
 from keras.regularizers import Regularizer
 
-from models.evaluate.metrics imprort MCC
+from models.eval.metrics imprort MCC
 from models.config import *
 
 class LogisticRegression(Sequential):
@@ -47,7 +47,7 @@ class LogisticRegression(Sequential):
         )
 
         self.compile(
+            loss='categorical_crossentropy',
             optimiser=optimiser,
             metrics=['accuracy', MCC],
-            loss='categorical_crossentropy'
         )
