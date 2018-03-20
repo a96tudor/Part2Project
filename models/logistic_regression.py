@@ -27,15 +27,6 @@ class LogisticRegression(Sequential):
               no_labels: int,
               optimiser: Optimizer,
               regulizer: Regularizer = None):
-        """
-
-        :param no_features:             # of features in each feature vector
-        :param no_labels:               # of possible labels to assign
-        :param optimiser:               The class of optimiser we want to use for this model
-        :param regulizer:               The Regularizer we wan to use on the input data. default None
-
-        :return:                        -
-        """
 
         self.add(
             Dense(
@@ -45,6 +36,7 @@ class LogisticRegression(Sequential):
                 activation='softmax'
             )
         )
+
 
         self.compile(
             loss='categorical_crossentropy',

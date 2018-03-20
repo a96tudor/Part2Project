@@ -196,7 +196,7 @@ class RulesHandler:
           'type': 'File' if closest_file[0]['diff'] < closest_socket[0]['diff'] else 'Socket'
         }
 
-    def _file_is_suspicious(self, uuid:str, timestamp: int):
+    def _file_is_suspicious(self, uuid: str, timestamp: int):
         """
 
         :param uuid:            The unique ID of the file in question
@@ -345,9 +345,9 @@ class RulesHandler:
                        'return s.uuid as uuid, s.timestamp as timestamp'
 
         return {
-            "File": self._DB_DRIVER.execute_query(query_file),
-            "Process": self._DB_DRIVER.execute_query(query_process),
-            "Socket": self._DB_DRIVER.execute_query(query_socket)
+            "File": self._DB_DRIVER.execute_query(query_file)[:cnts.MAX_ZEROS['File']],
+            "Process": self._DB_DRIVER.execute_query(query_process)[:cnts.MAX_ZEROS['Process']],
+            "Socket": self._DB_DRIVER.execute_query(query_socket)[:cnts.MAX_ZEROS['Socket']]
         }
 
     def _get_0_row(self, node: dict, neighbour: dict):
@@ -401,7 +401,8 @@ class RulesHandler:
                                     if node['type'] == 'Socket'
                                     else check_if_suspicious[node['type']](node['uuid'], node['timestamp']),
             cnts.FEATURES[11]: check_if_external[node['type']](node['uuid'], node['timestamp']),
-            cnts.FEATURES[12]: 0        # They are 0-labeled
+            cnts.FEATURES[12]: 0,
+            cnts.FEATURES[13]: 1
         }
 
     def get_entries_rule_1(self, results: list):
@@ -429,8 +430,13 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['f_uuid'], result['f_timestamp']),
                 cnts.FEATURES[10]: self._file_is_suspicious(result['f_uuid'], result['f_timestamp']),
                 cnts.FEATURES[11]: self._file_is_external(result['f_uuid'], result['f_timestamp']),
-                cnts.FEATURES[12]: 1
+                cnts.FEATURES[12]: 1,
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
+
             self._LABEL_1_IDS.add((result['f_uuid'], result['f_timestamp']))
 
             rows_list.append(new_row)
@@ -445,7 +451,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -460,8 +473,12 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: 1,  # Again, as defined by the rule itself
-                cnts.FEATURES[12]: 1
+                cnts.FEATURES[12]: 1,
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -477,8 +494,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['s_uuid'],
@@ -493,8 +516,12 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['s_uuid'], result['s_timestamp']),
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: 1,  # Again, as defined by the rule itself
-                cnts.FEATURES[12]: 1
+                cnts.FEATURES[12]: 1,
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['s_uuid'], result['s_timestamp']))
 
@@ -512,8 +539,14 @@ class RulesHandler:
 
         print(len(results))
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['f_uuid'],
@@ -528,8 +561,12 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['f_uuid'], result['f_timestamp']),
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: 1,  # Again, as defined by the rule itself
-                cnts.FEATURES[12]: 1
+                cnts.FEATURES[12]: 1,
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['f_uuid'], result['f_timestamp']))
 
@@ -545,8 +582,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             _, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -561,8 +604,12 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
-                cnts.FEATURES[12]: 1
+                cnts.FEATURES[12]: 1,
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -578,8 +625,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, _ = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -594,8 +647,12 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[10]: self._process_is_suspicious(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[11]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
-                cnts.FEATURES[12]: 1
+                cnts.FEATURES[12]: 1,
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -611,8 +668,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -627,8 +690,12 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[10]: 1,  # As defined by the rule
                 cnts.FEATURES[11]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
-                cnts.FEATURES[12]: 1
+                cnts.FEATURES[12]: 1,
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -644,8 +711,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -660,8 +733,12 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[10]: 1,  # As defined by the rule itself
                 cnts.FEATURES[11]: self._process_is_connected(result['p_uuid'], result['p_timestamp']),
-                cnts.FEATURES[12]: 1
+                cnts.FEATURES[12]: 1,
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 
@@ -678,8 +755,14 @@ class RulesHandler:
                 """
         print(len(results))
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -694,8 +777,12 @@ class RulesHandler:
                 cnts.FEATURES[9]: self._get_version_number(result['p_uuid'], result['p_timestamp']),
                 cnts.FEATURES[10]: 1,  # As defined by the rule
                 cnts.FEATURES[11]: 1,  # As defined by the rule
-                cnts.FEATURES[12]: 1
+                cnts.FEATURES[12]: 1,
+                cnts.FEATURES[13]: 0
             }
+
+            if None in new_row.values():
+                continue
 
             self._LABEL_1_IDS.add((result['p_uuid'], result['p_timestamp']))
 

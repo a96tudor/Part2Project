@@ -185,3 +185,9 @@ data/training/__pycache__
 data/training/training_set.csv
 data/tmp
 testing-stuff.py
+data/graphics
+graphics.py
+data/stats
+test.json
+data/results/
+models/evaluation/results
