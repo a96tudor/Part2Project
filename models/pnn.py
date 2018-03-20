@@ -5,6 +5,7 @@ from models import general as gng
 import strings
 from models.model import Model
 from models.exceptions import InvalidModeError
+from data.features.constants import *
 
 
 class ProbabilisticNeuralNetwork(Model):
@@ -23,7 +24,7 @@ class ProbabilisticNeuralNetwork(Model):
         self._mode = 'EVALUATE' if evaluate else 'CLASSIFY'
         if evaluate:
             self._trainXs, self._trainYs, self._testXs, self._testYs = \
-                utils.read_data_from_csv(data_path, gng.LABEL_COLS, drop_cols=gng.UNWANTED_COLUMNS, split=True)
+                utils.read_data_from_csv(data_path, LABELS, drop_cols=None, split=True)
 
             self.print_msg(
                 (
@@ -34,7 +35,7 @@ class ProbabilisticNeuralNetwork(Model):
             )
 
         else:
-            self._Xs, self._Ys = utils.read_data_from_csv(data_path, gng.LABEL_COLS, split=False)
+            self._Xs, self._Ys = utils.read_data_from_csv(data_path, LABELS, split=False)
             self.print_msg(
                 (
                     strings.HEADLINE_PNN, "", "Data loaded!",
@@ -58,7 +59,7 @@ class ProbabilisticNeuralNetwork(Model):
         print("**%d**" % len(full_df))
 
         self._trainXs, self._trainYs, self._testXs, self._testYs = \
-            utils.split_dataframe(full_df, gng.LABEL_COLS, test_part=test_part, percentile=percentile)
+            utils.split_dataframe(full_df, LABELS, test_part=test_part, percentile=percentile)
 
         print("New data split!")
         print("%d TrainX %d TrainY" % (len(self._trainXs), len(self._trainYs)))
