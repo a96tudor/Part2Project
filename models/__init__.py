@@ -32,7 +32,7 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
         evaluate=True
     )
 
-    df = pd.read_csv('data/training/training_set.csv')
+    df = pd.read_csv('data/training/training_set_big.csv')
 
     results = dict()
 

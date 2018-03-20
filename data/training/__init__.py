@@ -1,8 +1,8 @@
-from data.training import constants as cnst
-from data.training.database_driver import DatabaseDriver
+from data.features import constants as cnst
+from data.neo4J.database_driver import DatabaseDriver
 from data.training.rules_handler import RulesHandler
 import pandas as pd, numpy as np
-from collections import Counter
+from data.features.feature_extractor import FeatureExtractor
 
 
 def generate_training_set(host, port, db_usrname, db_passwd, rules_path, training_set_path):
@@ -20,9 +20,13 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
                                     False - otherwise
     """
 
+    LIMIT = 1000
+
+    show_nodes = list()
+
     print("Started building the training set ...")
 
-    ts = pd.DataFrame(columns=cnst.FEATURES)
+    ts = pd.DataFrame(columns=(cnst.FEATURES_ONE_HOT + ['SHOW', 'HIDE']))
 
     db = DatabaseDriver(host=host,
                         port=port,
@@ -32,51 +36,69 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
     print("Successfully connected to the database!")
 
     query = "match (x)" \
-            "where not 'Machine' in labels(x) and not 'Meta' in labels(x) " \
-            "return count(x) as total"
+            "where not 'Machine' in labels(x) and not 'Meta' in labels(x) and labels(x) <> ['Global']" \
+            "return x.uuid as uuid, x.timestamp as timestamp"
 
-    _TOTAL_NO_OF_NODES = db.execute_query(query)[0]['total']
+    all_nodes = db.execute_query(query)
+    _TOTAL_NO_OF_NODES = len(all_nodes)
 
     print('There are ' + str(_TOTAL_NO_OF_NODES) + ' nodes to process!')
 
-    rh = RulesHandler(db_driver=db)
+    CURRENT_RULES = [
+        'rule1',
+        'rule2',
+        'rule3',
+        'rule4',
+        'rule5',
+        'rule8',
+        'rule9',
+        'rule10',
+        'rule14'
+    ]
 
-    _CURRENT_RULES = {
-        'rule1': rh.get_entries_rule_1,
-        'rule2': rh.get_entries_rule_2,
-        'rule3': rh.get_entries_rule_3,
-        'rule4': rh.get_entries_rule_4,
-        'rule5': rh.get_entries_rule_5,
-        'rule8': rh.get_entries_rule_8,
-        'rule9': rh.get_entries_rule_9,
-        'rule10': rh.get_entries_rule_10,
-        'rule14': rh.get_entries_rule_14
-    }
-
-    for rule in _CURRENT_RULES:
+    for rule in CURRENT_RULES:
         print("Adding nodes defined by "+rule+"... ")
         with open(rules_path + rule + '.cyp') as f:
             rule_query = f.read()
-            result = db.execute_query(rule_query)[:cnst.MAX_ENTRIES_PER_RULE]
-            print("     Loaded %d results from the database" % len(result))
-            new_entries = _CURRENT_RULES[rule](result)
+            result = db.execute_query(rule_query)
+            show_nodes = show_nodes + result
+
+            for node in result:
+                try:
+                    all_nodes.pop(all_nodes.index(node))
+                except ValueError:
+                    # It is not in the list, so we don't add it again :D
+                    result.pop(result.index(node))
+
+            extractor = FeatureExtractor(result[:min(LIMIT, len(result))], db, verbose=True)
+
+            new_entries = extractor.get_feature_matrix()
+            new_entries['HIDE'] = pd.Series(np.zeros(len(new_entries)))
+            new_entries['SHOW'] = pd.Series(np.ones(len(new_entries)))
 
             ts = pd.concat([ts, new_entries], ignore_index=True)
             print("     Added " + str(new_entries.shape[0]) + " new entries!")
+
+    LIMIT_HIDE_NODES = 25000
+    hide_nodes = all_nodes[:min(LIMIT_HIDE_NODES, len(all_nodes))]
 
 
     print("=======================================================================")
     print("Finished adding nodes based on rules! Added " + str(ts.shape[0]) + " 1-labeled entries in total!")
     print("Now onto 0-labeled nodes...")
-    print('There are ' + str(_TOTAL_NO_OF_NODES - rh.get_1_labeled_count) + ' remaining nodes to process... Getting to work... ')
+    print('There are ' + str(_TOTAL_NO_OF_NODES - len(show_nodes)) + ' remaining nodes to process... Getting to work... ')
     print("=======================================================================")
 
     print("This might take a while...")
-    zero_labeled_entries = rh.get_0_labels()
+    extractor = FeatureExtractor(
+        hide_nodes, db, verbose=True
+    )
 
-    print("There are " + str(zero_labeled_entries.shape[0]) + ' 0-labeled entries!')
+    new_entries = extractor.get_feature_matrix()
+    new_entries['HIDE'] = pd.Series(np.ones(len(new_entries)))
+    new_entries['SHOW'] = pd.Series(np.zeros(len(new_entries)))
 
-    ts = pd.concat([ts, zero_labeled_entries], ignore_index=True)
+    ts = pd.concat([ts, new_entries], ignore_index=True)
 
     print("Phiew, finally done!")
 

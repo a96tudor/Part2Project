@@ -196,7 +196,7 @@ class RulesHandler:
           'type': 'File' if closest_file[0]['diff'] < closest_socket[0]['diff'] else 'Socket'
         }
 
-    def _file_is_suspicious(self, uuid:str, timestamp: int):
+    def _file_is_suspicious(self, uuid: str, timestamp: int):
         """
 
         :param uuid:            The unique ID of the file in question

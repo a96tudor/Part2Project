@@ -71,12 +71,31 @@ NEIGH_TYPE_FEATURES = {
     'NEIGH_SOCKET': 'Socket'
 }
 
-EDGE_TYPE_FEATURES = [
-    'EDGE_PO_CLIENT',
-    'EDGE_PO_SERVER',
-    'EDGE_PO_RaW',
-    'EDGE_PO_READ',
-    'EDGE_PO_WRITE',
-    'EDGE_PO_BIN',
-    'EDGE_PO_NONE'
+EDGE_TYPE_FEATURES = {
+    'EDGE_PO_CLIENT': 'CLIENT',
+    'EDGE_PO_SERVER': 'SERVER',
+    'EDGE_PO_RaW': 'RaW',
+    'EDGE_PO_READ': 'READ',
+    'EDGE_PO_WRITE': 'WRITE',
+    'EDGE_PO_BIN': 'BIN',
+    'EDGE_PO_NONE': 'NONE'
+}
+
+BLACKLIST = {
+    'Process': [
+        'sudo', 'chmod', 'usermod', 'groupmod', 'rm -rf',
+        '/etc/pwd', '/usr/bin', '/usr/lib', '/bin/', '/lib',
+        'attack', 'virus', 'worm', 'trojan'
+    ],
+    'File': [
+        'attack', 'worm', 'virus', 'trojan'
+    ]
+}
+
+DANGEROUS_LOCATIONS = [
+    '/etc/pwd', '/usr/bin', '/usr/lib', '/bin/', '/lib', '/boot', '/dev', '/root'
+]
+
+LABELS = [
+    'SHOW', 'HIDE'
 ]
