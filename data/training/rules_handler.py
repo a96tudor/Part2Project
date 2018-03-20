@@ -196,7 +196,7 @@ class RulesHandler:
           'type': 'File' if closest_file[0]['diff'] < closest_socket[0]['diff'] else 'Socket'
         }
 
-    def _file_is_suspicious(self, uuid:str, timestamp: int):
+    def _file_is_suspicious(self, uuid: str, timestamp: int):
         """
 
         :param uuid:            The unique ID of the file in question
@@ -345,9 +345,9 @@ class RulesHandler:
                        'return s.uuid as uuid, s.timestamp as timestamp'
 
         return {
-            "File": self._DB_DRIVER.execute_query(query_file),
-            "Process": self._DB_DRIVER.execute_query(query_process),
-            "Socket": self._DB_DRIVER.execute_query(query_socket)
+            "File": self._DB_DRIVER.execute_query(query_file)[:cnts.MAX_ZEROS['File']],
+            "Process": self._DB_DRIVER.execute_query(query_process)[:cnts.MAX_ZEROS['Process']],
+            "Socket": self._DB_DRIVER.execute_query(query_socket)[:cnts.MAX_ZEROS['Socket']]
         }
 
     def _get_0_row(self, node: dict, neighbour: dict):
@@ -451,7 +451,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -487,8 +494,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['s_uuid'],
@@ -526,8 +539,14 @@ class RulesHandler:
 
         print(len(results))
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['f_uuid'],
@@ -563,8 +582,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             _, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -600,8 +625,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, _ = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -637,8 +668,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -674,8 +711,14 @@ class RulesHandler:
         :return:                A pd.Dataframe containing all required entries
         """
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],
@@ -712,8 +755,14 @@ class RulesHandler:
                 """
         print(len(results))
         rows_list = list()
-
+        length = len(results)
+        idx = 0
+        percent = 0.0
         for result in results:
+            idx += 1
+            if idx/length >= percent:
+                print("         Loaded %.2f percent of the data" % percent)
+                percent += .2
             uid_sts, gid_sts = self._get_process_IDs_status(result['p_uuid'], result['p_timestamp'])
             new_row = {
                 cnts.FEATURES[0]: result['p_uuid'],

@@ -44,6 +44,10 @@ class Model:
 
         for idx in range(len(results)):
 
+            if not results[idx]['HIDE'] and not results[idx]['SHOW']:
+                # If this happens, we want to show the node just to be sure that it's all ok
+                results[idx]['SHOW'] = True
+
             if correctYs.iloc[idx,:].loc['HIDE'] == 1 and results[idx]['HIDE']:
                 # IT'S A CORRECT HIDE CLASSIFICATION
                 stats["correct_classifications"] += 1
@@ -77,6 +81,8 @@ class Model:
                          stats["true_negative"] + stats["false_negative"],\
                          stats["true_negative"] + stats["false_positive"], \
                          stats["true_positive"] + stats["false_negative"]
+
+        print("%d tp %d fp %d tn %d fn" % (stats['true_positive'], stats['false_positive'], stats['true_negative'], stats['false_negative']))
 
         stats["mcc_score"] = (stats["true_positive"] * stats["true_negative"] - stats["false_negative"] * stats["false_positive"]) \
                              / np.sqrt(s1 * s2 * s3 * s4)

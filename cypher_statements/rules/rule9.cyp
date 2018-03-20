@@ -11,5 +11,4 @@ where p.cmdline=~'.*sudo.*' or p.cmdline=~'.*chmod.*' or
       p.cmdline=~'.*rm -rf.*' or p.cmdline=~'.*attack.*' or
       p.cmdline=~'.*worm.*' or p.cmdline=~'.*trojan.*' or
       p.cmdline=~'.*virus.*'
-return p.uuid AS p_uuid, p.timestamp as p_timestamp,
-       f.uuid AS f_uuid, f.timestamp as f_timestamp
+return p.uuid AS uuid, p.timestamp as timestamp

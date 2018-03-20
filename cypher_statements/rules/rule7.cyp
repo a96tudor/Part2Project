@@ -7,4 +7,4 @@
 */
 
 match (s:Socket)-[:PROC_OBJ]->(p:Process)
-return distinct s.uuid
+return distinct s.uuid, s.timestamp
