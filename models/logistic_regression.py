@@ -4,7 +4,7 @@ from keras.layers import Dense
 from keras.optimizers import Optimizer
 from keras.regularizers import Regularizer
 
-from models.eval.metrics imprort MCC
+from models.evaluation.metrics import mcc
 from models.config import *
 
 class LogisticRegression(Sequential):
