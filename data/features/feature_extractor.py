@@ -21,6 +21,7 @@ from data.neo4J.database_driver import DatabaseDriver
 import pandas as pd
 from strings import LINE_DELIMITER, PROGRESS_REPORT
 from data.features.constants import *
+import numpy as np
 
 
 class FeatureExtractor(object):
@@ -101,7 +102,8 @@ class FeatureExtractor(object):
                                     'type':         the type of the neighbour,
                                     'uuid':         the id of the neighbour,
                                     'timestamp':    the timestamp of the neighbour,
-                                    'edge':         the edge type
+                                    'edge':         the edge type,
+                                    'dist':         distance in epochs from the neighbour
                                 }
                                         - If the parameters provided are valid
                             None        - otherwise
@@ -127,7 +129,8 @@ class FeatureExtractor(object):
                 'type': 'Process',
                 'uuid': results[0]['uuid'],
                 'timestamp': results[0]['timestamp'],
-                'edge': results[0]['rel_sts']
+                'edge': results[0]['rel_sts'],
+                'dist': abs(timestamp - results[0]['timestamp'])
             }
         else:
             # I'm looking for the File the Process was excuted from
@@ -160,16 +163,18 @@ class FeatureExtractor(object):
                     'type': 'Socket',
                     'uuid': closest_socket[0]['uuid'],
                     'timestamp': closest_socket[0]['timestamp'],
-                    'edge': closest_socket[0]['rel_sts']
+                    'edge': closest_socket[0]['rel_sts'],
+                    'dist': abs(timestamp - closest_socket[0]['timestamp'])
                 }
 
             if len(closest_socket) == 0:
                 return {
-                'type': 'File',
-                'uuid': closest_file[0]['uuid'],
-                'timestamp': closest_file[0]['timestamp'],
-                'edge': closest_file[0]['rel_sts']
-            }
+                    'type': 'File',
+                    'uuid': closest_file[0]['uuid'],
+                    'timestamp': closest_file[0]['timestamp'],
+                    'edge': closest_file[0]['rel_sts'],
+                    'dist': abs(timestamp - closest_file[0]['timestamp'])
+                }
 
             argmin = 'File' \
                 if abs(closest_socket[0]['timestamp'] - timestamp) > abs(closest_file[0]['timestamp'] - timestamp) \
@@ -179,7 +184,8 @@ class FeatureExtractor(object):
                 'type': argmin,
                 'uuid': closest_file[0]['uuid'] if argmin == 'File' else closest_socket[0]['uuid'],
                 'timestamp': closest_file[0]['timestamp'] if argmin == 'File' else closest_socket[0]['timestamp'],
-                'edge': closest_file[0]['rel_sts'] if argmin == 'File' else closest_socket[0]['rel_sts']
+                'edge': closest_file[0]['rel_sts'] if argmin == 'File' else closest_socket[0]['rel_sts'],
+                'dist': min(abs(timestamp - closest_file[0]['timestamp']), abs(timestamp - closest_socket[0]['timestamp']))
             }
 
     def _process_is_connected(self,
@@ -372,6 +378,30 @@ class FeatureExtractor(object):
 
         return 1.0 if len(results) != 0 else 0.0
 
+    def _get_node_degree(self,
+                         uuid: str,
+                         timestamp: int):
+        """
+                Private method that gets the degree of a specific node
+
+        :param uuid:            The unique ID of the node we're interested in
+        :param timestamp:       The timestamp of the node we're interested in
+
+        :return:                The resulting degree
+        """
+
+        q = "match (n) " \
+                "with n, size((n)--()) as degree " \
+            "where n.uuid = '%s' and n.timestamp = %d " \
+            "return degree" % (uuid, timestamp)
+
+        result = self._dbDriver.execute_query(q)
+
+        if len(result) == 0:
+            return None
+
+        return result[0]['degree']
+
     def get_feature_matrix(self):
         """
 
@@ -411,8 +441,16 @@ class FeatureExtractor(object):
                 else:
                     node_features[feature] = 0.0
 
+
+            deg = self._get_node_degree(node['uuid'], node['timestamp'])
+
+            if deg is None:
+                print("Here")
+                continue
+            node_features['DEGREE'] = deg
+
             """
-                NEIGH_TYPE and EDGE_TYPE
+                NEIGH_TYPE and EDGE_TYPE and NEIGH_DIST and NEIGH_DEGREE
             """
             neigh_data = self._get_closest_neighbour(
                 node['uuid'],
@@ -444,6 +482,9 @@ class FeatureExtractor(object):
                     node_features[feature] = 1.0
                 else:
                     node_features[feature] = 0.0
+
+            node_features['NEIGH_DIST'] = np.log(neigh_data['dist']) if neigh_data['dist'] != 0 else 0.0
+            node_features['NEIGH_DEGREE'] = self._get_node_degree(neigh_data['uuid'], neigh_data['timestamp'])
 
             """
                 WEB_CONN and NEIGH_WEB_CONN

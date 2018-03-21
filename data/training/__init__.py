@@ -20,7 +20,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
                                     False - otherwise
     """
 
-    LIMIT = 1000
+    LIMIT = 2500
 
     show_nodes = list()
 

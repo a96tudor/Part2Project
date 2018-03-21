@@ -17,7 +17,7 @@ limitations under the License.
 
 """
 from py2neo import Graph, Node
-
+from neo4j.v1 import GraphDatabase
 
 class DatabaseDriver:
 
@@ -79,3 +79,36 @@ class DatabaseDriver:
     def __str__(self):
 
         return "Neo4J connection to host {:s} on port {:d}".format(self._host, self._port)
+
+class AnotherDatabaseDriver(object):
+
+    def __init__(self,
+                 host: str,
+                 port: int,
+                 user: str,
+                 pswd: str):
+        """
+                CONSTRUCTOR
+
+        :param host:            IP address/ DNS name of the host where the Neo4J
+                                database is running
+        :param port:            The TCP port where the Neo4J database is running
+        :param user:            Username used to login to the database
+        :param pswd:            Password used to loing to the database
+        """
+
+        uri = "%s:%d" % (host, port)
+
+        self._driver = GraphDatabase.driver(uri, auth=(user, pswd))
+
+    def execute_query(self,
+                      query: str,
+                      **kwargs):
+        """
+                Method that executes a given query and returns its result,
+                as a list of dictionaries.
+
+        :param query:
+        :param kwargs:
+        :return:
+        """
