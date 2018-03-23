@@ -51,7 +51,7 @@ def read_csv(path, label_cols, drop_cols=None, normalize=True):
         feature_cols = get_diff(df.columns.values, label_cols)
         df.loc[:, feature_cols] = normalize_df(df.loc[:, feature_cols])
 
-    print(df.head)
+    #print(df.head)
 
     return df
 

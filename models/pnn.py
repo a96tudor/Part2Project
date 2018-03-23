@@ -10,7 +10,9 @@ from data.features.constants import *
 
 class ProbabilisticNeuralNetwork(Model):
 
-    def __init__(self, data_path, evaluate=False):
+    def __init__(self,
+                 data_path,
+                 evaluate=False):
         """
                 CONSTRUCTOR
 
