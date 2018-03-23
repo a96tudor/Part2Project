@@ -50,7 +50,10 @@ FEATURES_ONE_HOT = [
     'GID_STS',
     'VERSION',
     'SUSPICIOUS',
-    'EXTERNAL'
+    'EXTERNAL',
+    'DEGREE',
+    'NEIGH_DIST',
+    'NEIGH_DEGREE'
 ]
 
 ACCEPTED_NODES = [

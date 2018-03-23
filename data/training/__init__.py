@@ -1,5 +1,5 @@
 from data.features import constants as cnst
-from data.neo4J.database_driver import DatabaseDriver
+from data.neo4J.database_driver import DatabaseDriver, AnotherDatabaseDriver
 from data.training.rules_handler import RulesHandler
 import pandas as pd, numpy as np
 from data.features.feature_extractor import FeatureExtractor
@@ -28,10 +28,12 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
 
     ts = pd.DataFrame(columns=(cnst.FEATURES_ONE_HOT + ['SHOW', 'HIDE']))
 
-    db = DatabaseDriver(host=host,
-                        port=port,
-                        usrname=db_usrname,
-                        passwd=db_passwd)
+    db = AnotherDatabaseDriver(
+            host=host,
+            port=port,
+            user=db_usrname,
+            pswd=db_passwd
+    )
 
     print("Successfully connected to the database!")
 
@@ -79,7 +81,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
             ts = pd.concat([ts, new_entries], ignore_index=True)
             print("     Added " + str(new_entries.shape[0]) + " new entries!")
 
-    LIMIT_HIDE_NODES = 25000
+    LIMIT_HIDE_NODES = 20000
     hide_nodes = all_nodes[:min(LIMIT_HIDE_NODES, len(all_nodes))]
 
 
