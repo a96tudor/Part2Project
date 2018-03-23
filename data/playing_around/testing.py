@@ -1,4 +1,6 @@
-from data.training.database_driver import DatabaseDriver
+from data.neo4J.database_driver import DatabaseDriver, AnotherDatabaseDriver
+from timeit import timeit
+
 
 dd = DatabaseDriver(
     host='127.0.0.1',
@@ -7,8 +9,9 @@ dd = DatabaseDriver(
     port=7474
 )
 
-dd.execute_query(
+a = timeit(dd.execute_query(
     "match (n:File)-[:PROC_OBJ]->(p:Process) " 
     "return n, p"
-)
+))
 
+print(a)

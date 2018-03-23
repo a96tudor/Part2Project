@@ -17,7 +17,7 @@ limitations under the License.
 
 """
 
-from data.neo4J.database_driver import DatabaseDriver
+from data.neo4J.database_driver import DatabaseDriver, AnotherDatabaseDriver
 import pandas as pd
 from strings import LINE_DELIMITER, PROGRESS_REPORT
 from data.features.constants import *
@@ -28,7 +28,7 @@ class FeatureExtractor(object):
 
     def __init__(self,
                  nodes: list,
-                 driver: DatabaseDriver,
+                 driver: AnotherDatabaseDriver,
                  verbose: bool = False):
         """
             CONSTRUCTOR
@@ -47,7 +47,7 @@ class FeatureExtractor(object):
             assert(isinstance(node, dict))
             assert(list(node.keys()) == ['uuid', 'timestamp'])
 
-        assert(driver.connection_active())
+        #assert(driver.connection_active())
 
         self._nodes = nodes
         self._dbDriver = driver

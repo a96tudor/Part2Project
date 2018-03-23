@@ -80,6 +80,7 @@ class DatabaseDriver:
 
         return "Neo4J connection to host {:s} on port {:d}".format(self._host, self._port)
 
+
 class AnotherDatabaseDriver(object):
 
     def __init__(self,
@@ -99,7 +100,7 @@ class AnotherDatabaseDriver(object):
 
         uri = "%s:%d" % (host, port)
 
-        self._driver = GraphDatabase.driver(uri, auth=(user, pswd))
+        self._driver = GraphDatabase.driver(uri, auth=(user, pswd), encrypted=False)
 
     def execute_query(self,
                       query: str,
@@ -112,3 +113,26 @@ class AnotherDatabaseDriver(object):
         :param kwargs:
         :return:
         """
+        session = self._driver.session()
+
+        result = session.read_transaction(
+            lambda tx: tx.run(query)
+        )
+
+        records = result.records()
+        result = list()
+
+        for r in records:
+            result.append(dict(r.items()))
+
+        session.close()
+
+        return result
+
+    def close(self):
+        """
+
+        :return:
+        """
+
+        self._driver.close()
