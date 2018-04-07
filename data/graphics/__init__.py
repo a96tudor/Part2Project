@@ -37,7 +37,7 @@ def get_data():
     return cnt
 
 
-def histogram_dataset_distribution(cnt):
+def histogram_dataset_distribution():
     """
 
             Method that prints a histogram of the distribution of node types
@@ -45,6 +45,15 @@ def histogram_dataset_distribution(cnt):
 
     :return:
     """
+
+    cnt = {
+        'File': 1226165,
+        'Process': 46419,
+        'Socket': 45507,
+        'Meta': 17089,
+        'Machine': 25,
+        'Pipe': 66848
+    }
 
     sizes_log = [np.log(x) for x in cnt.values()]
     sizes = list(cnt.values())
@@ -74,20 +83,86 @@ def histogram_dataset_distribution(cnt):
 
     print("Total: {:d}".format(total))
 
-#new_data = get_data()
 
-data = {
-    'File': 1226165,
-    'Process': 46419,
-    'Socket': 45507,
-    'Meta': 17089,
-    'Machine': 25,
-    'Pipe': 66848
-}
+def histogram_node_degrees():
 
-#for n in data:
-#    data[n] += new_data[n]
+    def merge_df(df1, df2):
 
-#print(data)
+        result = pd.DataFrame(columns=df1.columns.values)
 
-histogram_dataset_distribution(data)
+        idx1 = 0
+        idx2 = 0
+
+        while idx1 < len(df1) and idx2 < len(df2):
+
+            if df1.loc[idx1, 'degree'] == df2.loc[idx2, 'degree']:
+                result = result.append(
+                    {
+                        'degree': df1.loc[idx1, 'degree'],
+                        'count': df1.loc[idx1, 'count'] + df2.loc[idx2, 'count']
+                    }, ignore_index=True
+                )
+                idx1 += 1
+                idx2 += 1
+            elif df1.loc[idx1, 'degree'] < df2.loc[idx2, 'degree']:
+                result = result.append(
+                    {
+                        'degree': df1.loc[idx1, 'degree'],
+                        'count': df1.loc[idx1, 'count']
+                    }, ignore_index=True
+                )
+
+                idx1 += 1
+            else:
+                result = result.append(
+                    {
+                        'degree': df2.loc[idx2, 'degree'],
+                        'count': df2.loc[idx2, 'count']
+                    }, ignore_index=True
+                )
+
+                idx2 += 1
+
+        while idx1 < len(df1):
+            result = result.append(
+                {
+                    'degree': df1.loc[idx1, 'degree'],
+                    'count': df1.loc[idx1, 'count']
+                }, ignore_index=True
+            )
+
+            idx1 += 1
+
+        while idx2 < len(df2):
+            result = result.append(
+                {
+                    'degree': df2.loc[idx2, 'degree'],
+                    'count': df2.loc[idx2, 'count']
+                }, ignore_index=True
+            )
+
+            idx2 += 1
+
+        return result
+
+    df1 = pd.read_csv('csv/degree_dataset1.csv')
+    df2 = pd.read_csv('csv/degree-dataset2.csv')
+    df3 = pd.read_csv('csv/degree-dataset3.csv')
+
+    full = merge_df(merge_df(df1, df2), df3)
+
+    data = list()
+
+    for i in range(len(full)):
+        for _ in range(full.loc[i, 'count']):
+            data.append(full.loc[i, 'degree'])
+
+    plt.hist(data, bins=len(full))
+    plt.title('Log-scale histogram of node degrees')
+    plt.xlabel('Node degree')
+    plt.ylabel('Number of nodes')
+    plt.yscale('log', nonposy='clip')
+    plt.show()
+
+
+histogram_node_degrees()

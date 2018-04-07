@@ -27,7 +27,10 @@ FEATURES = [
     'GID_STS',
     'VERSION',
     'SUSPICIOUS',
-    'EXTERNAL'
+    'EXTERNAL',
+    'DEGREE',
+    'NEIGH_DIST',
+    'NEIGH_DEGREE'
 ]
 
 FEATURES_ONE_HOT = [
