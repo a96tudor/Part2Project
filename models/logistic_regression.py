@@ -12,13 +12,14 @@ class LogisticRegression(Sequential):
         Class representing Logistic Regression model
     """
     def __init__(self,
-                 config: ModelConfig):
+                 config: ModelConfig,
+                 **kwargs):
         """
             CONSTRUCTOR
 
             :param config:  the configuration of the model
         """
-        Sequential.__init__(self)
+        super(LogisticRegression, self).__init__(**kwargs)
 
         self._cnf = config
 
