@@ -8,8 +8,18 @@ class Config(object):
     DEBUG = False
     CSRF_ENABLED = True
     SECRET = os.getenv('SECRET')
-    DATABASE_HOST = '127.0.0.1'
-    DATABASE_PORT = '27017'
+
+    CACHE_DATABASE_HOST = 'http://127.0.0.1'
+    CACHE_DATABASE_PORT = 1234
+    CACHE_DATABASE_USER = 'cadets'
+    CACHE_DATABASE_PASS = 'pass'
+
+    FEATURES_DATABASE_HOST = 'bolt://127.0.0.1'
+    FEATURES_DATABASE_PORT = 7687
+    FEATURES_DATABASE_USER = 'neo4j'
+    FEATURES_DATABASE_PASS = 'opus'
+
+    MODEL = 'mlp'
 
 
 class DevelopmentConfig(Config):
@@ -17,7 +27,7 @@ class DevelopmentConfig(Config):
         Development configuration class
     """
     DEBUG = True
-    DATABASE_NAME = 'testing'
+    CACHE_DATABASE_NAME = 'testing'
 
 
 class TestingConfig(Config):
@@ -25,7 +35,7 @@ class TestingConfig(Config):
         Testing configuration class
     """
     DEBUG = True
-    DATABASE_NAME = 'testing'
+    CACHE_DATABASE_NAME = 'testing'
     TESTING = True
 
 
@@ -42,7 +52,7 @@ class ProductionConfig(Config):
         Production configuration class
     """
     DEBUG = False
-    DATABASE_NAME = 'production'
+    CACHE_DATABASE_NAME = 'production'
     TESTING = False
 
 
