@@ -14,6 +14,4 @@ where (
             f.name[0]=~'/root/.*' or f.name[0]=~'/dev/.*' or
             f.name[0]=~'/usr/sbin/.*' or f.name[0]=~'/etc/pwd.*'
        	)
-return p.uuid as p_uuid, p.timestamp as p_timestamp,
-       f.uuid as f_uuid, f.timestamp as f_timestamp,
-       c.state as rel_sts
+return p.uuid as uuid, p.timestamp as timestamp

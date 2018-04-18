@@ -38,7 +38,8 @@ NODE_EDGE_CODES = {
         'code': 3,
         'CLIENT': 1,
         'SERVER': 2,
-        'RaW': 3
+        'RaW': 3,
+        'BIN': 4
     }
 }
 
@@ -62,4 +63,12 @@ CODE_TO_NODE = {
     1: "Process",
     2: "File",
     3: "Socket"
+}
+
+MAX_ENTRIES_PER_RULE = 1000
+
+MAX_ZEROS = {
+    'File': 6000,
+    'Socket': 3000,
+    'Process': 3000
 }
