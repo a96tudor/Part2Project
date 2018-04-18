@@ -6,6 +6,7 @@ jobsHandler = None
 cacheHandler = None
 featureExtractor = None
 
+
 def get_app(config_name):
     """
     :param config_name:     Type of configuration wanted for the REST API.
