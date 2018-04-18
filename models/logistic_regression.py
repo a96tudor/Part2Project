@@ -7,6 +7,7 @@ from keras.regularizers import Regularizer
 from models.evaluation.metrics import mcc
 from models.config import *
 
+
 class LogisticRegression(Sequential):
     """
         Class representing Logistic Regression model

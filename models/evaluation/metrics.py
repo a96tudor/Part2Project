@@ -45,9 +45,9 @@ def precision(y_true, y_pred):
         Function that computes the precision of a model
         Follows the formula:
 
-                           tp
-                recall = -------
-                         (tp+fp)
+                              tp
+                precision = -------
+                            (tp+fp)
 
     :param y_true:        The test set classes
     :param y_pred:        The predicted classes

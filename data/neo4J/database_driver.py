@@ -19,8 +19,11 @@ limitations under the License.
 from py2neo import Graph, Node
 from neo4j.v1 import GraphDatabase
 
-class DatabaseDriver:
 
+class DatabaseDriver(object):
+    """
+        Class connecting to the Neo4J database
+    """
     def __init__(self,
                  host: str,
                  usrname: str,
@@ -82,6 +85,9 @@ class DatabaseDriver:
 
 
 class AnotherDatabaseDriver(object):
+    """
+        Class connecting to the Neo4J database
+    """
 
     def __init__(self,
                  host: str,

@@ -45,13 +45,13 @@ class TwoLayerNeuralNetwork(Sequential):
     def setup(self,
               no_features: int,
               no_labels: int,
-              optimiser: Optimizer,
+              optimizer: Optimizer,
               regularizer: Regularizer = None):
         """
 
         :param no_features:             # of features in each feature vector
         :param no_labels:               # of labels we want to return
-        :param optimiser:               Optimizer used by the the model
+        :param optimizer:               Optimizer used by the the model
         :param regularizer:             Regularizer used on the input data. Default None.
         :return:
         """
@@ -74,6 +74,6 @@ class TwoLayerNeuralNetwork(Sequential):
 
         self.compile(
             loss='categorical_crossentropy',
-            optimiser=optimiser,
+            optimizer=optimizer,
             metrics=['accuracy', mcc],
         )

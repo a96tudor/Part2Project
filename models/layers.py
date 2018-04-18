@@ -28,7 +28,7 @@ class GraphAttention(Layer):
     """
 
     def __init__(self,
-                 newF:int,
+                 newF: int,
                  attn_dropout:float=.5,
                  activation='relu',
                  kernel_initializer='glorot_uniform',
