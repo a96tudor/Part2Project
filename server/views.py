@@ -236,4 +236,22 @@ class JobActionView(View):
 
     methods = ['GET']
 
-    
+    def dispatch_request(self):
+        return Response(200)
+
+
+class CacheResetView(View):
+    """
+        View class that handles requests that cause the cache database to be cleaned.
+
+        Path: /reset-cache?forced=<True/False>
+        Methods: PUT
+
+        The 'forced' flag here is optional. By default, it will be set to False.
+        When set to True, it will forcibly delete any running jobs and then clears the cache.
+        Otherwise, it will return with HTTP code 400 (Invalid request) if there is a job running.
+    """
+    methods = ['PUT']
+
+    def dispatch_request(self):
+        return Response(200)
