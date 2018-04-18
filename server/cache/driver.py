@@ -61,10 +61,10 @@ class PostgresDriver(object):
                        *args):
         """
 
-        :param query:       The query we want to execute
-        :param args:        The arguments to replace the wildcards in the query
-
-        :return:            -
+        :param query:                           The query we want to execute
+        :param args:                            The arguments to replace the wildcards in the query
+        :return:                                -
+        :except psycopg2.DatabaseError:         If executing the query fails
         """
         with self.conn.cursor() as cur:
             cur.execute_query(query, *args)
@@ -83,6 +83,36 @@ class PostgresDriver(object):
 
             except(Exception, driver.DatabaseError) as erorr:
                 print("Error while creating table %s" % table)
+
+    def execute_SELECT(self,
+                       query,
+                       *args):
+        """
+                Method that handles the execution of SELECT queries
+
+        :param query:       The query to be executed
+        :param args:        The arguments to replace the wildcards in the query
+        :return:            The query results, as a list of tuples
+        """
+        results = None
+
+        with self.conn.cursor() as cur:
+            cur.execute_query(query, *args)
+            results = cur.fetchall()
+            cur.close()
+
+        return results
+
+    def execute_INSERT(self,
+                       query,
+                       *args):
+        """
+                Method that handles the execution of INSERT queries
+
+        :param query:
+        :param args:
+        :return:
+        """
 
     def __exit__(self,
                  exc_type,

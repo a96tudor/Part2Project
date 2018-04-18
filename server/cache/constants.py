@@ -51,3 +51,13 @@ DATABASE_SETUP = {
                             "ON DELETE CASCADE"
                    ")"
 }
+
+SELECTS = {
+    'jobID': 'SELECT jobs.id '
+                'FROM jobs '
+                'WHERE jobs.jobID=%s',
+
+    'node-cache-status': 'SELECT n.validUntil '
+                            'FROM nodes AS n '
+                            'WHERE n.uuid=%s AND n.timestmp=%d'
+}
