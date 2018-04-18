@@ -57,5 +57,3 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
         key: float(sum([results['metrics'][idx][key] for idx in range(NUM_ITER)])/NUM_ITER)
                 for key in results['metrics'][0]}
 
-    with open(path_results, 'w') as fout:
-        json.dump(results, fout)
