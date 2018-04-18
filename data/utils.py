@@ -152,7 +152,7 @@ def split_dataframe(df, label_cols, test_part, percentile=0.90):
     """
     print()
     print("Starting new split: \n    Dataframe length: %d \n    Test section: %d" % (len(df), test_part))
-    test_left = int((1-percentile)*(test_part-1)*len(df))
+    test_left = int((1-percentile)*(test_part - 1)*len(df))
     test_right = min(int((1-percentile)*test_part*len(df) - 1), len(df) - 1)
 
     print("Test interval: %d - %d" % (test_left, test_right))
