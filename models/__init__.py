@@ -30,3 +30,5 @@ def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=
     df = pd.read_csv('data/training/training_set.csv')
     df = utils.shuffle_df(df)
     print(df.head())
+
+def get_model(model_name):
