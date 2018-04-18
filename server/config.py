@@ -1,4 +1,5 @@
 import os
+from server.views import *
 
 
 class Config(object):
@@ -20,6 +21,25 @@ class Config(object):
     FEATURES_DATABASE_PASS = 'opus'
 
     MODEL = 'mlp'
+
+    views = [
+        {
+            'url': '/classify',
+            'class': ClassifyView
+        },
+        {
+            'url': '/clear-cache',
+            'class': CacheResetView
+        },
+        {
+            'url': '/db-connect',
+            'class': Neo4JConnectView
+        },
+        {
+            'url': '/job-action',
+            'class': JobActionView
+        }
+    ]
 
 
 class DevelopmentConfig(Config):

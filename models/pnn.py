@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from data import utils
-from models import general as gng
 import strings
 from models.model import Model
 from models.exceptions import InvalidModeError

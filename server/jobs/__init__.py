@@ -19,7 +19,7 @@ limitations under the License.
 from models.model import Model
 from data.features.feature_extractor import FeatureExtractor
 from server.cache import CacheHandler
-import datetime.datetime as dt
+from datetime import datetime as dt
 import random
 import base64
 from server import utils

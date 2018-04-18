@@ -28,15 +28,17 @@ class API(Flask):
                  **kwargs):
         """
 
-        :param name:
+        :param include_name:
+        :param config:
+        :param args:
+        :param kwargs:
         """
+
         super(API, self).__init__(include_name, *args, **kwargs)
-        """
+
+        # Adding the rules from the config
         for view in config.views:
             self.add_url_rule(
                 view['url'],
-                view['class']
+                view_func=view['class'].as_view(view['url'])
             )
-        """
-        self.add_url_rule('/classify',
-                          view_func=ClassifyView.as_view('classify_view'))

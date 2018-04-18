@@ -64,24 +64,27 @@ class ClassifyView(View):
                         - False otherwise
         """
         if request.method not in self.methods:
-            return False
+            return False, 'Invalid method. Expected POST, got %s' % request.method
 
         if not request.is_json:
-            return False
+            return False, 'Invalid data format. Expected JSON'
 
         data = request.json
 
-        if not isinstance(data, list):
-           return False
+        if not isinstance(data, dict):
+           return False, 'Invalid datatype inside JSON. Expected dict, got %s' % str(type(data))
 
-        for entry in data:
+        if not (len(data) == 1 and 'nodes' in data):
+            return False, 'Invalid data!'
+
+        for entry in data['nodes']:
             if not isinstance(entry, dict):
-                return False
+                return False, 'Invalid datatype in nodes list. Expected dict, got %s.' % str(type(entry))
             for e in self.expected_values:
                 if e not in entry:
-                    return False
+                    return False, 'Invalid nodes list entry. Expected key %s not found.' % str(type(e))
 
-        return True
+        return True, 'Success'
 
     def generate_job(self,
                      nodes):
@@ -96,10 +99,12 @@ class ClassifyView(View):
         return jobID
 
     def dispatch_request(self):
-        if not self.validate_input():
+        sts, msg = self.validate_input()
+
+        if not sts:
             return Response(
                 status=400,
-                response='Invalid input format'
+                response=msg
             )
 
         if not isinstance(jobsHandler, JobsHandler):
@@ -146,26 +151,31 @@ class Neo4JConnectView(View):
         :return:    True - if the input is valid
                     False - otherwise
         """
-        if not request.is_json or request.method not in self.methods:
-            return False
+        if request.method not in self.methods:
+            return False, 'Invalid method. Expected PUT, got %s' % request.method
+
+        if not request.is_json:
+            return False, 'Invalid data format. Expected JSON.'
 
         data = request.json
 
         if not isinstance(data, dict):
-            return False
+            return False, 'Invalid data type inside JSON. Expected dict, got %s' % str(type(data))
 
         for key in self.keys:
             if key not in data:
-                return False
+                return False, 'Invalid dictionary received. Key %s not found.' % key
 
-        return True
+        return True, 'Success'
 
     def dispatch_request(self):
 
-        if not self.validate_input():
+        sts, msg = self.validate_input()
+
+        if not sts:
             return Response(
                 status=400,
-                response='ERROR: Invalid input!'
+                response=msg
             )
 
         data = request.json
@@ -178,6 +188,8 @@ class Neo4JConnectView(View):
                 )
             else:
                 print("Stopping running jobs!")
+
+        # TODO: finish implementation
 
         return Response(200)
 
@@ -235,8 +247,45 @@ class JobActionView(View):
     """
 
     methods = ['GET']
+    valid_actions = ['results', 'status', 'stop']
+    valid_args = ['id', 'action']
+
+    def validate_input(self):
+        """
+
+        :return:        True - if the input is valid
+                        False - otherwise
+        """
+        if request.method not in self.methods:
+            return False, "Invalid method: %s" % request.method
+
+        data = request.args.to_dict()
+
+        if len(data) != len(self.valid_args):
+            return False, "Invalid number of arguments: %d. Expected %d" % (len(data), len(self.valid_args))
+
+        for arg in self.valid_args:
+            if arg not in data:
+                return False, "Required argument: %s" % arg
+
+        for action in self.valid_actions:
+            if data['action'] == action:
+                return True, "Valid!"
+
+        return False, "Invalid action name: %s" % data['action']
 
     def dispatch_request(self):
+
+        sts, msg = self.validate_input()
+
+        if not sts:
+            return Response(
+                status=400,
+                response=msg
+            )
+
+        # TODO: finish implementation here
+
         return Response(200)
 
 
@@ -253,5 +302,40 @@ class CacheResetView(View):
     """
     methods = ['PUT']
 
+    def validate_input(self):
+        """
+
+        :return:        - False, error_message   -   if the input is invalid
+                        - True, 'Success'        -   if the input is valid
+        """
+        if request.method not in self.methods:
+            return False, 'Invalid request: %s' % request.method
+
+        data = request.args.to_dict()
+
+        if len(data) == 0:
+            return True, 'Success'
+
+        if len(data) != 1:
+            return False, 'Too many arguments provided: %d. Expected 1.' % len(data)
+
+        if 'forced' not in data:
+            return False, 'Invalid argument: %s' % data.keys()[0]
+
+        if not isinstance(data['forced'], bool):
+            return False, 'Invalid argument type. Expected bool, got %s' % str(type(data['forced']))
+
+        return True, 'Success'
+
     def dispatch_request(self):
+
+        sts, msg = self.validate_input()
+        if not sts:
+            return Response(
+                status=400,
+                response=msg
+            )
+
+        # TODO: finish implementation
+
         return Response(200)
