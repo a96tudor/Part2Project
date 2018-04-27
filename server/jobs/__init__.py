@@ -20,7 +20,7 @@ from models.model import Model
 from data.features.feature_extractor import FeatureExtractor
 from server.cache import CacheHandler
 from datetime import datetime as dt
-import random
+from numpy import random
 import base64
 from server import utils
 
@@ -100,15 +100,10 @@ class JobsHandler(object):
         :param nodesCount:      Number of nodes in the job
         :return:                The generated jobID
         """
-        date = str(dt.now())
-        random_digits = random.randint(10000, 99999)
+        current_date = str(dt.now()).replace(' ', '').replace('-', '').replace('.', '').replace(':', '')
+        rnd_seq = ''.join([str(x) for x in random.choice(9, 5)])
 
-        raw_string = "%s%d%d" % (date, nodesCount, random_digits)
-
-        raw_string.replace(" ", "")
-        raw_string.replace("-", "")
-        raw_string.replace(":", "")
-        raw_string.replace(".", "")
+        raw_string = "%s%s" % (current_date, rnd_seq)
 
         shuffled = "".join(random.sample(raw_string, len(raw_string)))
 

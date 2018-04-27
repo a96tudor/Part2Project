@@ -49,3 +49,4 @@ class PostgressNoActiveConnection(CustomException):
         message = "No active database connection!"
         CustomException.__init__(self, message)
 
+

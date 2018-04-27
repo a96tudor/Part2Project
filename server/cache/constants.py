@@ -55,41 +55,52 @@ DATABASE_SETUP = {
 SELECTS = {
     'jobID': 'SELECT jobs.id '
                 'FROM jobs '
-             'WHERE jobs.jobID=?',
+             'WHERE jobs.jobID=%s',
 
     'node-cache-status': 'SELECT n.validUntil '
                             'FROM nodes AS n '
-                            'WHERE n.uuid=? AND n.timestmp=?',
+                            'WHERE n.uuid=%s AND n.timestmp=%d',
 
     'jobs-by-status': 'SELECT count(*) as count '
                         'FROM jobs '
-                    'WHERE jobs.status=?',
+                    'WHERE jobs.status=%s',
 
     'nodes-for-job': 'SELECT n.uuid, n.timestmp, n.validUntil, n.showLikelihood, n.hideLikelihood, n.recommended '
                         'FROM nodes AS n '
                         'INNER JOIN jobsToNodes as jtn ON n.id=jtn.nodeID '
                         'INNER JOIN jobs as j ON jtn.jobID=j.id '
-                     'WHERE j.jobID=?',
+                     'WHERE j.jobID=%s',
 
     'job-status': 'SELECT jobs.status '
                     'FROM jobs '
-                  'WHERE jobs.jobID=?',
+                  'WHERE jobs.jobID=%s',
 
     'node-classification-results': 'SELECT nodes.showLikelihood, nodes.hideLikelihood, nodes.recommended '
                                         'FROM nodes '
-                                   'WHERE nodes.uuid=? AND nodes.timestmp=?'
+                                   'WHERE nodes.uuid=%s AND nodes.timestmp=%d',
+
+    'running-jobs': 'SELECT jobs.jobID '
+                        'FROM jobs '
+                    'WHERE jobs.status="RUNNING"'
 }
 
-INSERT = {
+INSERTS = {
     'new-job': 'INSERT INTO jobs(jobID, status, started) '
-                    'VALUES (?, ?, ?)',
+                    'VALUES (%s, %s, now())',
 
     'new-node': 'INSERT '
                 'INTO nodes(uuid, timestmp, showLikelihood, hideLikelihood, recommended, classifiedBy, validUntil) '
-                    'VALUES(?, ?, ?, ?, ?, ?, ?)',
+                    'VALUES(%s, %d, %f, %f, %s, %s, )',
 
     'node-to-job-rel': 'INSERT '
                        'INTO nodestojobs(jobID, nodeID) '
                             'VALUES(?, ?)'
 }
 
+UPDATES = {
+    'job-status': 'UPDATE jobs '
+                    'SET jobs.status=? '
+                  'WHERE jobs.jobID=?'
+}
+
+ACCEPTED_JOB_STATUS = ['WAITING', 'RUNNING', 'STOPPED', 'DONE']
