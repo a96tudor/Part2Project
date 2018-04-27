@@ -19,7 +19,7 @@ limitations under the License.
 
 DATABASE_SETUP = {
     "jobs": "CREATE TABLE jobs (" 
-                "id INT PRIMARY KEY AUTOINCREMENT, "
+                "id SERIAL PRIMARY KEY, "
                 "jobID VARCHAR(32) NOT NULL, "
                 "status VARCHAR(10) NOT NULL, "
                 "started DATE NOT NULL, "
@@ -27,7 +27,7 @@ DATABASE_SETUP = {
             ")",
 
     "nodes": "CREATE TABLE nodes ("
-                "id INT PRIMARY KEY AUTOINCREMENT, "
+                "id SERIAL PRIMARY KEY, "
                 "uuid VARCHAR(50) NOT NULL, "
                 "timemstmp INT NOT NULL, "
                 "classifiedBy VARCHAR(50), "
@@ -38,7 +38,7 @@ DATABASE_SETUP = {
              ")",
 
     "jobsToNodes": "CREATE TABLE jobsToNodes ( "
-                        "id INT PRIMARY KEY AUTOINCREMENT, "
+                        "id SERIAL PRIMARY KEY, "
                         "jobID INT NOT NULL, "
                         "nodeID INT NOT NULL, "
                         "FOREIGN KEY (jobID) "
@@ -55,9 +55,41 @@ DATABASE_SETUP = {
 SELECTS = {
     'jobID': 'SELECT jobs.id '
                 'FROM jobs '
-                'WHERE jobs.jobID=%s',
+             'WHERE jobs.jobID=?',
 
     'node-cache-status': 'SELECT n.validUntil '
                             'FROM nodes AS n '
-                            'WHERE n.uuid=%s AND n.timestmp=%d'
+                            'WHERE n.uuid=? AND n.timestmp=?',
+
+    'jobs-by-status': 'SELECT count(*) as count '
+                        'FROM jobs '
+                    'WHERE jobs.status=?',
+
+    'nodes-for-job': 'SELECT n.uuid, n.timestmp, n.validUntil, n.showLikelihood, n.hideLikelihood, n.recommended '
+                        'FROM nodes AS n '
+                        'INNER JOIN jobsToNodes as jtn ON n.id=jtn.nodeID '
+                        'INNER JOIN jobs as j ON jtn.jobID=j.id '
+                     'WHERE j.jobID=?',
+
+    'job-status': 'SELECT jobs.status '
+                    'FROM jobs '
+                  'WHERE jobs.jobID=?',
+
+    'node-classification-results': 'SELECT nodes.showLikelihood, nodes.hideLikelihood, nodes.recommended '
+                                        'FROM nodes '
+                                   'WHERE nodes.uuid=? AND nodes.timestmp=?'
 }
+
+INSERT = {
+    'new-job': 'INSERT INTO jobs(jobID, status, started) '
+                    'VALUES (?, ?, ?)',
+
+    'new-node': 'INSERT '
+                'INTO nodes(uuid, timestmp, showLikelihood, hideLikelihood, recommended, classifiedBy, validUntil) '
+                    'VALUES(?, ?, ?, ?, ?, ?, ?)',
+
+    'node-to-job-rel': 'INSERT '
+                       'INTO nodestojobs(jobID, nodeID) '
+                            'VALUES(?, ?)'
+}
+

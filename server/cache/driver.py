@@ -18,6 +18,7 @@ limitations under the License.
 """
 import psycopg2 as driver
 from server.cache.constants import *
+from exceptions.server.cache import *
 
 
 class PostgresDriver(object):
@@ -38,16 +39,23 @@ class PostgresDriver(object):
         :param user:
         :param password:
         """
-        url = "%s:%d" % (host, port)
 
-        self.conn = driver.connect(
-            host=url,
-            dbName=dbName,
-            user=user,
-            password=password
-        )
+        try:
+            self.conn = driver.connect(
+                host=host,
+                database=dbName,
+                user=user,
+                password=password,
+                port=port
+            )
+        except driver.OperationalError or driver.DatabaseError:
+            raise PostgresDriverConnectionException(
+                url="%s:%d" % (host, port),
+                dbName=dbName
+            )
 
-        self.url = url
+        self.host = host
+        self.port = port
         self.dbName = dbName
         self.user = user
         self.password = password
@@ -60,6 +68,7 @@ class PostgresDriver(object):
         """
         if self.conn is not None:
             self.conn.close()
+            self.conn = None
 
     def _execute_query(self,
                        query,
@@ -72,12 +81,14 @@ class PostgresDriver(object):
         :except psycopg2.DatabaseError:         If executing the query fails
         """
         with self.conn.cursor() as cur:
-            cur.execute_query(query, *args)
+            print(cur)
+            cur.execute(query, *args)
             cur.close()
             self.conn.commit()
 
     def _get_new_connection(self,
-                            newURL: str,
+                            newHost: str,
+                            newPort: str,
                             newDbName: str,
                             newUser: str,
                             newPass: str):
@@ -93,10 +104,11 @@ class PostgresDriver(object):
 
         try:
             newConn = driver.connect(
-                host=newURL,
+                host=newHost,
                 dbName=newDbName,
                 user=newUser,
-                password=newPass
+                password=newPass,
+                port=newPort
             )
 
             return newConn
@@ -112,12 +124,10 @@ class PostgresDriver(object):
         :return:
         """
         for table in DATABASE_SETUP:
-            try:
-                self._execute_query(DATABASE_SETUP[table])
-                print("Created the %s table" % table)
 
-            except(Exception, driver.DatabaseError) as erorr:
-                print("Error while creating table %s" % table)
+            self._execute_query(DATABASE_SETUP[table])
+            print("Created the %s table" % table)
+
 
     def execute_SELECT(self,
                        query,

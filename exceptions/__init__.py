@@ -18,7 +18,7 @@ limitations under the License.
 """
 
 
-class Error(object):
+class CustomException(Exception):
     """
         Class representing a general error in the system
     """
@@ -30,6 +30,7 @@ class Error(object):
         :param msg:         The message we want to display
         """
         self._message = msg
+        Exception(self, CustomException).__init__()
 
     def __str__(self):
         """

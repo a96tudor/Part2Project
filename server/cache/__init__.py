@@ -16,7 +16,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-
+from server.cache.driver import PostgresDriver
+from server.cache.constants import *
 
 class CacheHandler(object):
     """
@@ -26,5 +27,23 @@ class CacheHandler(object):
                  dbName: str,
                  host: str,
                  user: str,
-                 password: str):
-        a = 1
+                 password: str,
+                 port: int):
+        """
+
+        :param dbName:
+        :param host:
+        :param user:
+        :param password:
+        :param port:
+        """
+        self.postgresDriver = PostgresDriver(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            dbName=dbName
+        )
+
+    def get_running_jobs(self):
+        pass
