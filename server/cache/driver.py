@@ -47,6 +47,11 @@ class PostgresDriver(object):
             password=password
         )
 
+        self.url = url
+        self.dbName = dbName
+        self.user = user
+        self.password = password
+
     def close(self):
         """
             Method that closes the database connection
@@ -71,6 +76,36 @@ class PostgresDriver(object):
             cur.close()
             self.conn.commit()
 
+    def _get_new_connection(self,
+                            newURL: str,
+                            newDbName: str,
+                            newUser: str,
+                            newPass: str):
+        """
+
+        :param newURL:          The new URL
+        :param newDbName:       The new db name
+        :param newUser:         The new username
+        :param newPass:         The new password
+        :return:                The new connection - if successful
+                                None               - otherwise
+        """
+
+        try:
+            newConn = driver.connect(
+                host=newURL,
+                dbName=newDbName,
+                user=newUser,
+                password=newPass
+            )
+
+            return newConn
+        except:
+            # If an exception is thrown while
+            # configuring the new connection,
+            # it is unsuccessful. Thus return None
+            return None
+
     def setup_database(self):
         """
 
@@ -94,6 +129,7 @@ class PostgresDriver(object):
         :param args:        The arguments to replace the wildcards in the query
         :return:            The query results, as a list of tuples
         """
+
         results = None
 
         with self.conn.cursor() as cur:
@@ -109,10 +145,87 @@ class PostgresDriver(object):
         """
                 Method that handles the execution of INSERT queries
 
+        :param query:      The INSERT to be executed
+        :param args:       The arguments for the wildcards in the query
+        :return:           -
+        """
+        with self.conn.cursor() as cur:
+            cur.execute_query(query, *args)
+            self.conn.commit()
+            cur.close()
+
+    def execute_UPDATE(self,
+                       query,
+                       *args):
+        """
+
         :param query:
         :param args:
         :return:
         """
+        with self.conn.cursor() as cur:
+            cur.execute_query(query, *args)
+            self.conn.commit()
+            cur.close()
+
+    def renew_connection(self,
+                         newHost: str,
+                         newPort: int,
+                         newDbName: str,
+                         newUser: str,
+                         newPass: str):
+        """
+            Method that changes the database.
+            Returns a boolean status (i.e. successful or not)
+            If not successful, the connection does not change.
+
+        :param newHost:         The host of the new database
+        :param newPort:         The port of the new database
+        :param newDbName:       The name of the new database
+        :param newUser:         The username used to connect to the new database
+        :param newPass:         The password used to connect to the new database
+
+        :return:                True - if successful
+                                False - otherwise
+        """
+        url = "%s:%d" % (newHost, newPort)
+
+        newConn = self._get_new_connection(url, newDbName, newUser, newPass)
+
+        if newConn is None:
+            return False
+
+        self.url = url
+        self.dbName = newDbName
+        self.user = newUser
+        self.password = newPass
+
+        self.conn = newConn
+
+        return True
+
+    def reset_connection(self):
+        """
+            Method that attempts to reset the
+            current connection. Only changes
+            the actual inner object if
+            the new connection is successful
+
+        :return:        True - if successful
+                        False - otherwise
+        """
+        newConn = self._get_new_connection(
+            newURL=self.url,
+            newDbName=self.dbName,
+            newUser=self.user,
+            newPass=self.password
+        )
+
+        if newConn is None:
+            return False
+        else:
+            self.conn = newConn
+            return True
 
     def __exit__(self,
                  exc_type,

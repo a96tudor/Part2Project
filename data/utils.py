@@ -29,7 +29,7 @@ def get_diff(l1, l2):
     return list(set(l1) - set(l2))
 
 
-def read_csv(path, label_cols, drop_cols=None, normalize=True):
+def read_csv(path, label_cols, drop_cols=None, normalize=True, shuffle=True):
     """
 
     :param path:            The path where we want to read the data from
@@ -42,7 +42,8 @@ def read_csv(path, label_cols, drop_cols=None, normalize=True):
 
     df = pd.read_csv(path)
 
-    df = shuffle_df(df)
+    if shuffle:
+        df = shuffle_df(df)
 
     if drop_cols is not None:
         df = df.drop(columns=drop_cols)
