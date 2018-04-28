@@ -37,6 +37,7 @@ class GraphAttention(Layer):
                  attn_kernel_regularizer=None,
                  kernel_constraint=None,
                  attn_kernel_constraint=None,
+                 self_importance=.25,
                  **kwargs):
         """
 
@@ -61,6 +62,8 @@ class GraphAttention(Layer):
         :param attn_kernel_regularizer:     Regulizer used by the attention kernel. Default None
         :param kernel_constraint:           Constraints on the kernel. Default None
         :param attn_kernel_constraint:      Constraints on the attention kernel. Default None
+        :param self_importance:             How much importance to accord to the input feature
+                                            vector. Default 0.25
         """
 
         self.newF = newF
@@ -80,6 +83,8 @@ class GraphAttention(Layer):
 
         self.built = False  # Will be reset by build()
 
+        self.self_importance = self_importance
+
         super(GraphAttention, self).__init__(**kwargs)
 
     def build(self,
@@ -96,7 +101,7 @@ class GraphAttention(Layer):
 
         F = input_shape[0][-1]  # Length of input feature vectors
 
-        # LAYER KERNEL - the W matrix in the paper. F x F weights matrix
+        # LAYER KERNEL - the W matrix in the paper. F x newF weights matrix
         self.kernel = self.add_weight(
             shape=(F, self.newF),
             initializer=self.kernel_initializer,
@@ -105,7 +110,7 @@ class GraphAttention(Layer):
             constraint=self.kernel_constraint
         )
 
-        # ATTENTION KERNEL. 2newF x 1 weights matrix
+        # ATTENTION KERNEL. 2newF x 1 weights vector
         self_attn_kernel = self.add_weight(
             shape=(self.newF, 1),
             initializer=self.attn_kernel_initializer,
@@ -131,48 +136,54 @@ class GraphAttention(Layer):
              **kwargs):
         """
 
-        :param inputs:          GAT layer inputs. Have to be a tuple with the format (X, A)
-                                where X = the features matrix (N x F) and A = the adjacency matrix (N x N)
+        :param inputs:          GAT layer inputs. Have to be a tuple with the format (x, X)
+                                where:  x = feature vector for the node
+                                        X = feature matrix for the neighbours of the node
 
         :return:                The layer output
         """
-        X = inputs[0]
-        A = inputs[1]
+        x = inputs[0]       # Feature vector of the input node
+        X = inputs[1]       # Feature vectors of the neighbours
 
-        N = K.shape(X)[0]  # number of nodes in the graph
+        N = K.shape(X)[0]
 
-        outputs = list()
+        features = None
 
-        # Attention network inputs. N x newF matrix
-        linear_trans_X = K.dot(X, self.kernel)
+        # Linear transformations for both x and X
 
-        self_attn = K.dot(linear_trans_X, self.attn_kernel[0])
-        neigh_attn = K.dot(linear_trans_X, self.attn_kernel[1])
+        x_transformed = K.dot(x, self.kernel)   # (1 x F) * (F x F') = (1 x F')
+        X_transformed = K.dot(X, self.kernel)   # (n x F) * (F x F') = (n x F')
 
-        dense = self_attn + K.transpose(neigh_attn)
+        # Now computing a^T(Wh_i||Wh_j) for every neighbour h_j
+        # Note: I am using the fact that [a_1||a_2]^T(Wh_i||Wh_j) = a_1^T * Wh_i + a_2^T * Wh_j
+        attn_for_self = K.dot(x_transformed, self.attn_kernel[0])   # (1 x F') * (F' x 1) = (1 x 1)
+        attn_for_neighs = K.dot(X_transformed, self.attn_kernel[1])  # (n x F') * (F' x 1) = (n x 1)
 
-        dense = LeakyReLU(alpha=.2)(dense)
+        # Repeating a_1^T * Wh_i n times
+        attn_for_self_repeat = K.repeat_elements(attn_for_self, rep=N, axis=0)
 
-        mask = K.switch(
-            K.equal(
-                A,
-                K.constant(0.)
-            ),
-            K.ones_like(A) * -10e9,
-            K.zeros_like(A)
-        )
+        # Adding them up, to get a^T(Wh_i||Wh_j)
+        dense = attn_for_self_repeat + attn_for_neighs  # (n x 1) + (n x 1) = (n x 1)
+        dense = K.transpose(dense)  # (n x 1)^T  = (1 x n)
 
-        masked_dense = dense + mask
+        # Masking the values before activation
+        mask = K.ones(shape=(1, N, ))
+        mask = K.exp(mask * -10e9) * -10e9
 
-        # Getting attention coefficients e(i,j)
-        softmax = K.softmax(masked_dense)
+        masked = dense + mask
 
-        dropout = Dropout(rate=self.attn_dropout)(softmax)
+        # Computing alpha_i,j = softmax(a^T[Wh_i||Wh_j])
+        softmax = K.softmax(masked)
 
-        # New feature vectors
-        features = K.dot(dropout, linear_trans_X)
+        # Adding dropout
+        dropout = Dropout(self.attn_dropout)(softmax)
 
-        if self.activation is not None:
-            features = self.activation(features)
+        # Calculating the feature vector with respect with the neighbours
+        # neigh = dropout^T * X_transformed
+        features_neigh = K.dot(dropout, X_transformed)  # (1 x n) * (n x F') = (1 x F')
+
+        # Now, the final step
+        # newH_i = (1-self_importance)*neigh + self_imporance *x_transformed
+        features = (1-self.self_importance) * features_neigh + self.self_importance * x_transformed
 
         return features
