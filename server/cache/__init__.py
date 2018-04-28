@@ -50,16 +50,70 @@ class CacheHandler(object):
             dbName=dbName
         )
 
-    def _generate_jobID(self):
+    def _exists_node(self,
+                 uuid: str,
+                 timestamp: int):
         """
-            Private method generating a new jobID
 
-        :return:        The resulting jobID
+        :param uuid:            The unique ID of the node
+        :param timestamp:       The timestamp of the node
+
+        :return:                True - if it exists
+                                False - otherwise
         """
-        current_date = str(dt.now()).replace(' ', '').replace('-', '').replace('.', '').replace(':', '')
-        rnd_seq = ''.join(
-            [str(x) for x in random.choice(9,5)]
-        )
+        query = SELECTS['node-existance']
+
+        result = self.postgresDriver.execute_SELECT(query, (uuid, timestamp, ))
+
+        if result[0][0] != 0:
+            # it's already in the cache db
+            return True
+        else:
+            return False
+
+    def _get_node_id(self,
+                     uuid: str,
+                     timestamp: int):
+        """
+
+        :param uuid:        Unique ID of the node
+        :param timestamp:   Timestamp of the node
+
+        :return:            the internal cache ID of the node - if exists & successful
+                            None - otherwise
+        """
+        query = SELECTS['nodeID']
+
+        try:
+            results = self.postgresDriver.execute_SELECT(query, (uuid, timestamp, ))
+
+            if len(results) == 0:
+                return None
+
+            return results[0][0]
+        except:
+            return None
+
+    def _get_job_id(self,
+                    jobID:str):
+        """
+
+        :param jobID:   Public job ID
+
+        :return:        The internal job ID - if exists & successful
+                        None - otherwise
+        """
+        query = SELECTS['jobID']
+
+        try:
+            results = self.postgresDriver.execute_SELECT(query, (jobID, ))
+
+            if len(results) == 0:
+                return None
+
+            return results[0][0]
+        except:
+            return None
 
     def get_running_jobs(self):
         """
@@ -158,6 +212,82 @@ class CacheHandler(object):
 
         :param jobID:       The public job ID
 
-        :return:            The job status
+        :return:            The job status - if successful
+                            None - if not successful
         """
-        
+        query = SELECTS['job-status']
+        try:
+            status = self.postgresDriver.execute_SELECT(query, jobID)[0][0]
+
+            return status
+        except:
+            return None
+
+    def add_node_results(self,
+                     jobID: str,
+                     uuid: str,
+                     timestamp: int,
+                     showProb: float,
+                     hideProb: float,
+                     recommended: str,
+                     ttl: int,
+                     override:bool=True):
+        """
+
+        :param jobID:                   The job the node belongs to
+        :param uuid:                    The uuid of the node
+        :param timestamp:               The timestamp of the node
+        :param showProb:                Probability that the node should be shown
+        :param hideProb:                Probability that the node should be hidden
+        :param recommended:             Recommended action(i.e. 'SHOW' or 'HIDE')
+        :param ttl:                     Time-to-live for this cached value
+        :param override:                Whether to override the cache entry if the node
+                                    was already entered or not
+
+        :return:                        True - if successful
+                                        False - otherwise
+        """
+        assert(recommended in ['SHOW', 'HIDE'])
+
+        jobInnerID = self._get_job_id(jobID)
+
+        if jobInnerID is None:
+            # The jobID is not valid!! Therefore, fail!
+            return False
+
+        # First, checking if the node already exists in the database
+        nodeInnerID = self._get_node_id(uuid, timestamp)
+
+        if nodeInnerID is not None:
+
+            query = INSERTS['node-to-job-rel']
+
+            try:
+                self.postgresDriver.execute_INSERT(query, (nodeInnerID, jobInnerID, ))
+            except:
+                # The insert failed, thus return False
+                return False
+
+            if not override:
+                # All done
+                return True
+
+            # Otherwise, we need to update the database
+
+            query = UPDATES['node-results']
+
+            try:
+                self.postgresDriver.execute_UPDATE(
+                    query,
+                    (showProb, hideProb, None, uuid, timestamp, )
+                )
+
+                return True
+            except:
+                # The update failed, so return False
+                return False
+
+        # If the node wasn't already in the database,
+        # then we first need to add it as a new entry
+
+        # TODO

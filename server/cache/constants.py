@@ -81,7 +81,15 @@ SELECTS = {
 
     'running-jobs': 'SELECT jobs.jobID '
                         'FROM jobs '
-                    'WHERE jobs.status="RUNNING"'
+                    'WHERE jobs.status="RUNNING"',
+
+    'node-existance': 'SELECT count(*) AS count'
+                'FROM nodes '
+            'WHERE nodes.uuid=%s AND nodes.timestmp=%s',
+
+    'nodeID': 'SELECT nodes.id '
+              'FROM nodes '
+              'WHERE nodes.uuid=%s AND nodes.timesmp=%s'
 }
 
 INSERTS = {
@@ -94,13 +102,20 @@ INSERTS = {
 
     'node-to-job-rel': 'INSERT '
                        'INTO nodestojobs(jobID, nodeID) '
-                            'VALUES(?, ?)'
+                            'VALUES(%s, %s)'
 }
 
 UPDATES = {
     'job-status': 'UPDATE jobs '
-                    'SET jobs.status=? '
-                  'WHERE jobs.jobID=?'
+                    'SET jobs.status=%s '
+                  'WHERE jobs.jobID=%s',
+
+    'node-results': 'UPDATE nodes '
+                        'SET nodes.showlikelihood=%s, '
+                            'nodes.hidelikelihood=%s, '
+                            'nodes.recommended=%s, '
+                            'nodes.validuntil=%s '
+                    'WHERE nodes.uuid=%s, nodes.timestmp=%s'
 }
 
 ACCEPTED_JOB_STATUS = ['WAITING', 'RUNNING', 'STOPPED', 'DONE']
