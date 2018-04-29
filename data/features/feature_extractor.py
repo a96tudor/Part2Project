@@ -378,6 +378,26 @@ class FeatureExtractor(object):
 
         return 1.0 if len(results) != 0 else 0.0
 
+    def _get_neighbours_for_node(self,
+                                 uuid: str,
+                                 timestamp: int):
+        """
+
+        :param uuid:            The unique ID of the node in question
+        :param timestamp:       The timestamp of the node in question
+
+        :return:                A list of all the neighbours of the node,
+                                represented as (uuid, timestamp) pairs
+        """
+        query = 'match (n {uuid: "%s", timestamp: %d}) -- (m)' \
+                    'where ("File" in labels(m) or "Process" in labels(m) or "Socket" in labels(m))' \
+                        'and (m.uuid <> "%s" or m.timestamp <> %d)' \
+                'return m.uuid as uuid, m.timestamp as timestamp' % (uuid, timestamp, uuid, timestamp)
+
+        neighs = self._dbDriver.execute_query(query)
+
+        return neighs
+
     def _get_node_degree(self,
                          uuid: str,
                          timestamp: int):
@@ -601,6 +621,13 @@ class FeatureExtractor(object):
             print(PROGRESS_REPORT[last_step] % (cnt_done, total))
 
         for node in self._nodes:
-            i = 1
+
+            neighs = self._get_neighbours_for_node(
+                uuid=node['uuid'],
+                timestamp=node['timestamp']
+            )
+
+            result[(node['uuid'], node['timestamp'],)] = neighs
 
         return result
+    
