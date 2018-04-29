@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.utils import shuffle
+import random
+import json
 
 
 def get_features_and_labels(df, label_cols):
@@ -185,6 +187,7 @@ def shuffle_df(df):
     """
     return shuffle(df).reset_index(drop=True)
 
+
 def print_dict(data):
     """
 
@@ -195,5 +198,40 @@ def print_dict(data):
         print("%s: %.5f" % (str(key), float(data[key])))
 
 
+def shuffle_dict(data: dict):
+    """
+        Method that shuffles a given dictionary
+
+    :param data:        The dictionary we want to shuffle
+    :return:            The shuffled dict
+    """
+
+    keys = list(data.keys())
+    result = dict()
+
+    shuffled_keys = random.shuffle(keys)
+
+    for key in shuffled_keys:
+        result[key] = data[key]
+
+    return result
 
 
+def dump_json(data,
+              filename):
+    """
+        Method that saves a dictionary/ list to a JSON file on disk.
+
+    :param data:            the data we want to save. Has to be either a list or a dictionary
+    :param filename:        full path to the file we're saving it to
+
+    :return:                -
+    """
+    try:
+        assert(type(data) in [list, dict])
+    except AssertionError:
+        print("Invalid datatype! Expected list or dict, got ", type(data))
+        return
+
+    with open(filename, 'w') as fout:
+        json.dump(data, fout)

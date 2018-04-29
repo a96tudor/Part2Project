@@ -102,3 +102,8 @@ DANGEROUS_LOCATIONS = [
 LABELS = [
     'SHOW', 'HIDE'
 ]
+
+SUPPORTED_FILE_FORMATS = [
+    'df',
+    'json'
+]

@@ -601,7 +601,7 @@ class FeatureExtractor(object):
                     last_step -= PROGRESS_REPORT['step']
                     print(PROGRESS_REPORT[last_step/100] % (cnt_done, total))
 
-            result[(node['uuid'], node['timestamp'],)] = node_features
+            result[(node['uuid'], node['timestamp'],)]['self'] = node_features
 
         return result
 
@@ -630,4 +630,3 @@ class FeatureExtractor(object):
             result[(node['uuid'], node['timestamp'],)] = neighs
 
         return result
-    

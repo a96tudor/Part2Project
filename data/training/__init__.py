@@ -5,7 +5,12 @@ import pandas as pd, numpy as np
 from data.features.feature_extractor import FeatureExtractor
 
 
-def generate_training_set(host, port, db_usrname, db_passwd, rules_path, training_set_path):
+def generate_training_set(host,
+                          port,
+                          db_usrname,
+                          db_passwd,
+                          rules_path,
+                          training_set_path):
     """
         Method that creates a new training set, based on a set of pre-defined rules\
 
@@ -38,7 +43,7 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
     print("Successfully connected to the database!")
 
     query = "match (x)" \
-            "where not 'Machine' in labels(x) and not 'Meta' in labels(x) and labels(x) <> ['Global']" \
+            "where not 'Machine' in labels(x) and not 'Pipe' in labels(x) and not 'Meta' in labels(x) and labels(x) <> ['Global']" \
             "return x.uuid as uuid, x.timestamp as timestamp"
 
     all_nodes = db.execute_query(query)
@@ -118,115 +123,3 @@ def generate_training_set(host, port, db_usrname, db_passwd, rules_path, trainin
     print("DONE - Successful!")
 
     return True
-
-
-def split_training_set(training_set_path='data/training/training_set.csv',
-                       results_path='data/tmp/', training_percentile=.75):
-    """
-
-    :param training_set_path:                Path to the CSV file containing the full dataset
-    :param results_path:                     Folder where to save the split dataset
-    :param training_percentile:              Fraction of the dataset that will act as the training data
-
-    :return:                                 - path to the training dataset
-                                             - path to the testing dataset
-    """
-
-    train_file = results_path + 'train.csv'
-    test_file  = results_path + 'test.csv'
-
-    print("Reading data...")
-    # READING FULL DATASET
-    training_set_path = str(training_set_path)
-    data_full = pd.read_csv(training_set_path)
-
-    data_train, data_test = split_from_DataFrame(data=data_full, percentile=training_percentile)
-
-    print("Writing the two datasets to %s and %s ... " % (train_file, test_file))
-    data_train.to_csv(train_file)
-    data_test.to_csv(test_file)
-
-    print("==================================")
-    print("DONE!")
-    print("%d training examples" % len(data_train))
-    print("%d test examples" % len(data_test))
-    print("==================================")
-
-
-def normalize_features(FVs: np.ndarray):
-    """
-
-        Normalizes the given features set, using the formula:
-
-            x_k = (x_k - mean(x_k)) / var(x_k)
-
-    :param FVs:     The feature vectors, as a np.ndarray
-    :return:        another np.ndarray
-    """
-    cnt_cols = FVs.shape[1]
-
-    for col in range(cnt_cols):
-        var = np.var(FVs[:, col])
-        mean = np.mean(FVs[:, col])
-        FVs[:, col] = (FVs[:, col] - mean) / var
-
-    return FVs
-
-
-def split_from_DataFrame(data, percentile=.75):
-    """
-
-    :param data:              Dataframe we want to split
-    :param percentile:      determining the number of nodes with 'SHOW'
-
-    :return:                - DF with train data
-                            - DF with test data
-    """
-
-    def split(df, size):
-        """
-
-        :param df:              Dataframe to split
-        :param size:       Head size for the split
-
-        :return:                - The first head_size rows as a dataframe
-                                - The last len(df) - head_size rows as a dataframe
-        """
-
-        all_idx = list(range(df))
-
-        test_idx = np.random.choice(all_idx, size=size, replace=False)
-        train_idx = list(set(all_idx) - set(test_idx))
-
-        hd = df
-        tl = df.tail(len(df) - head_size)
-
-        return hd, tl
-
-    # INITIALIZING THE TRAIN AND TEST DATAFRAMES
-    data_train = pd.DataFrame(columns=cnst.FEATURES)
-    data_test = pd.DataFrame(columns=cnst.FEATURES)
-
-    # GETTING INDIVIDUAL NODE COUNTS
-    node_types = data['NODE_TYPE'].tolist()
-    diff_node_types = set(node_types)
-
-    node_counts = {
-        node: node_types.count(node) for node in diff_node_types
-    }
-
-    print("Splitting data...")
-    # SPLITTING THE DATASET BASED ON THE 'NODE_TYPE' COLUMN
-    for node in node_counts:
-        test_nodes = int(percentile * node_counts[node])
-
-        data_node = data[
-            data['NODE_TYPE'] == node
-        ]
-
-        train, test = split(data_node, test_nodes)
-
-        data_train = pd.concat([data_train, train], ignore_index=True)
-        data_test = pd.concat([data_test, test], ignore_index=True)
-
-    return data_train, data_test
