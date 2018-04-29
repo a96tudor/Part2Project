@@ -52,6 +52,8 @@ def get_dataset(driver: AnotherDatabaseDriver,
 
     features = feature_extractor.get_feature_matrix(include_NONE=include_NONE)
 
+    print(features)
+
     if not for_gat:
         if not shuffle:
             return features
@@ -201,7 +203,7 @@ def build_training_set(host: str,
 
             print("     Added " + str(len(features)) + " new entries!")
 
-            full_results += features
+            full_results.update(features)
 
     # Setting the HIDE nodes limit so that the training set
     # roughly follows the 30-70 distribution of SHOW/HIDE nodes
@@ -226,7 +228,7 @@ def build_training_set(host: str,
         features[node]['SHOW'] = 0
         features[node]['HIDE'] = 1
 
-    full_results += features
+    full_results.update(features)
 
     if not save_to_disk:
         return full_results
@@ -242,7 +244,6 @@ def build_training_set(host: str,
         file_path = "%s/%s" % (save_in_dir, filename)
 
         df.to_csv(file_path, index=True)
-        
 
 def build_df_from_dict(data: dict):
     """

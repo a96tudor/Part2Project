@@ -209,9 +209,9 @@ def shuffle_dict(data: dict):
     keys = list(data.keys())
     result = dict()
 
-    shuffled_keys = random.shuffle(keys)
+    random.shuffle(keys)
 
-    for key in shuffled_keys:
+    for key in keys:
         result[key] = data[key]
 
     return result

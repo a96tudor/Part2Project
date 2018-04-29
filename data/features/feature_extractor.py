@@ -601,6 +601,7 @@ class FeatureExtractor(object):
                     last_step -= PROGRESS_REPORT['step']
                     print(PROGRESS_REPORT[last_step/100] % (cnt_done, total))
 
+            result[(node['uuid'], node['timestamp'],)] = dict()
             result[(node['uuid'], node['timestamp'],)]['self'] = node_features
 
         return result
