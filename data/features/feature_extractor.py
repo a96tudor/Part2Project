@@ -378,6 +378,26 @@ class FeatureExtractor(object):
 
         return 1.0 if len(results) != 0 else 0.0
 
+    def _get_neighbours_for_node(self,
+                                 uuid: str,
+                                 timestamp: int):
+        """
+
+        :param uuid:            The unique ID of the node in question
+        :param timestamp:       The timestamp of the node in question
+
+        :return:                A list of all the neighbours of the node,
+                                represented as (uuid, timestamp) pairs
+        """
+        query = 'match (n {uuid: "%s", timestamp: %d}) -- (m)' \
+                    'where ("File" in labels(m) or "Process" in labels(m) or "Socket" in labels(m))' \
+                        'and (m.uuid <> "%s" or m.timestamp <> %d)' \
+                'return m.uuid as uuid, m.timestamp as timestamp' % (uuid, timestamp, uuid, timestamp)
+
+        neighs = self._dbDriver.execute_query(query)
+
+        return neighs
+
     def _get_node_degree(self,
                          uuid: str,
                          timestamp: int):
@@ -402,13 +422,17 @@ class FeatureExtractor(object):
 
         return result[0]['degree']
 
-    def get_feature_matrix(self):
+    def get_feature_matrix(self,
+                           include_NONE=True):
         """
 
-        :return:        A pandas dataframe containing all the features
+        :param include_NONE:    Whether we want to include the nodes we failed to get a
+                                feature vector for as 'NONE' or not. Default True
+        :return:                A pandas dict containing all the features
         """
 
-        result = pd.DataFrame(columns=FEATURES_ONE_HOT)
+        result = dict()
+        cnt_done = 0
 
         if self._verbose:
             # Setting up log data
@@ -425,14 +449,16 @@ class FeatureExtractor(object):
                 NODE TYPES
             """
             if any(node[x] is None for x in node):
+                if include_NONE:
+                    result[(node['uuid'], node['timestamp'], )] = None
                 continue
 
             node_type = self._get_node_type(node['uuid'], node['timestamp'])
 
             if node_type not in ACCEPTED_NODES:
                 # We're not going to care about this entry
-                print(node_type)
-                print("Exits here - 1")
+                if include_NONE:
+                    result[(node['uuid'], node['timestamp'], )] = None
                 continue
 
             for feature in NODE_TYPE_FEATURES:
@@ -445,7 +471,8 @@ class FeatureExtractor(object):
             deg = self._get_node_degree(node['uuid'], node['timestamp'])
 
             if deg is None:
-                print("Here")
+                if include_NONE:
+                    result[(node['uuid'], node['timestamp'], )] = None
                 continue
             node_features['DEGREE'] = deg
 
@@ -459,16 +486,19 @@ class FeatureExtractor(object):
             )
 
             if neigh_data is None:
-                #print("Exits here - 2")
+                if include_NONE:
+                    result[(node['uuid'], node['timestamp'], )] = None
                 continue
 
             if any(neigh_data[x] is None for x in neigh_data):
+                if include_NONE:
+                    result[(node['uuid'], node['timestamp'], )] = None
                 continue
 
             if neigh_data['type'] not in ACCEPTED_NODES:
                 # We're not going to care about this entry
-                #print("Exits here - 3")
-
+                if include_NONE:
+                    result[(node['uuid'], node['timestamp'], )] = None
                 continue
 
             for feature in NEIGH_TYPE_FEATURES:
@@ -560,10 +590,6 @@ class FeatureExtractor(object):
                     node['uuid'], node['timestamp']
                 )
 
-            new_entries = pd.DataFrame(node_features, index=[0])
-
-            result = pd.concat([result, new_entries], axis=0, ignore_index=True)
-
             if self._verbose:
                 cnt_done += 1
 
@@ -575,5 +601,33 @@ class FeatureExtractor(object):
                     last_step -= PROGRESS_REPORT['step']
                     print(PROGRESS_REPORT[last_step/100] % (cnt_done, total))
 
+            result[(node['uuid'], node['timestamp'],)] = dict()
+            result[(node['uuid'], node['timestamp'],)]['self'] = node_features
+
         return result
 
+    def get_neighbours(self):
+        """
+            Method that returns a list of the neighbouring nodes for each
+            of the nodes provided
+
+        :return:
+        """
+        result = dict()
+        if self._verbose:
+            cnt_done = 0
+            total = len(self._nodes)
+            last_step = 0
+            print("Getting neibourhood data...")
+            print(PROGRESS_REPORT[last_step] % (cnt_done, total))
+
+        for node in self._nodes:
+
+            neighs = self._get_neighbours_for_node(
+                uuid=node['uuid'],
+                timestamp=node['timestamp']
+            )
+
+            result[(node['uuid'], node['timestamp'],)] = neighs
+
+        return result

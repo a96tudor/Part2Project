@@ -1,146 +1,216 @@
 import numpy as np
 import pandas as pd
 from data import utils
-from models import general as gng
 import strings
-from models.model import Model
+from models import Model
 from models.exceptions import InvalidModeError
 from data.features.constants import *
+from models.config import *
+from pickle import dump, load
 
 
 class ProbabilisticNeuralNetwork(Model):
 
     def __init__(self,
-                 data_path,
-                 evaluate=False):
+                 config: ModelConfig):
+
         """
-                CONSTRUCTOR
+            Constructor
 
-        :param data_path:        Path to the csv file containing the data
-        :param evaluate:         Whether we want to evaluate the model or just to use this as a classifier
-                                    Default False
+        :param config:      The configuration for the model
         """
-        super().__init__()
+        super(ProbabilisticNeuralNetwork, self).__init__(config)
 
-        self._data_path = data_path
-        self._mode = 'EVALUATE' if evaluate else 'CLASSIFY'
-        if evaluate:
-            self._trainXs, self._trainYs, self._testXs, self._testYs = \
-                utils.read_data_from_csv(data_path, LABELS, drop_cols=None, split=True)
+        self.weights = None
+        self.As = None
+        self.sigma = None
 
-            self.print_msg(
-                (
-                    strings.HEADLINE_PNN, "", "Data loaded!",
-                    ("%d Train examples", len(self._trainXs)),
-                    ("%d Test examples", len(self._testXs)),
-                )
-            )
-
-        else:
-            self._Xs, self._Ys = utils.read_data_from_csv(data_path, LABELS, split=False)
-            self.print_msg(
-                (
-                    strings.HEADLINE_PNN, "", "Data loaded!",
-                    ("%d Examples in the training set", len(self._Xs))
-                )
-            )
-
-    def renew_split(self, test_part, percentile=.75):
+    def _normalize(self,
+                   array: np.ndarray):
         """
-            Method that renews the current split on the data used by the model
+            Private method that takes a numpy array and normalizez it such as ||a|| = 1
 
-        :param percentile:      How many entries should be in the train part
-        :param test_part:       The test_part^th (1-percentile) section of the df will be used as the test set
-        :return:                -
+        :param array:       The np.ndarray to normalize
+        :return:            The normalized np.ndarray
         """
-        full_train = pd.concat([self._trainXs, self._trainYs], axis=1)
-        full_test = pd.concat([self._testXs, self._testYs], axis=1)
+        factor = np.sqrt(
+            np.sum(array ** 2)
+        )
 
-        full_df = pd.concat([full_train, full_test], axis=0, ignore_index=True)
+        return np.array(array / factor)
 
-        print("**%d**" % len(full_df))
-
-        self._trainXs, self._trainYs, self._testXs, self._testYs = \
-            utils.split_dataframe(full_df, LABELS, test_part=test_part, percentile=percentile)
-
-        print("New data split!")
-        print("%d TrainX %d TrainY" % (len(self._trainXs), len(self._trainYs)))
-        print("%d TestX %d TestY" % (len(self._testXs), len(self._testYs)))
-
-    def evaluate(self):
+    def _get_parzen_estimates(self,
+                              data: np.ndarray) -> np.ndarray:
         """
-                    Method that evaluates the model. Only available in 'EVALUATE' mode
+            Private method that, based on a set of input feature vectors
+
+        :param data:      The list of feature vectors to process
+        :return:          The corresponding Parzen estimates
+        """
+
+        results = np.empty(
+            shape=(len(data), len(self.config.LABELS)),
+            dtype=float
+        )
+
+        for i in range(len(data)):
+            X = self._normalize(data[i, :])
+            g_SHOW = 0.0
+            g_HIDE = 0.0
+            for j in range(len(self.weights)):
+                z = np.dot(X, self.weights[j, :])
+                exp1 = np.exp(z / (self.sigma[0]))
+                exp2 = np.exp(z / (self.sigma[1]))
+                g_SHOW += self.As[j, 0] * exp1
+                g_HIDE += self.As[j, 1] * exp2
+            results[i, :] = np.array([g_SHOW, g_HIDE])
+
+        return results
+
+    def load_checkpoint(self,
+                        path: str) -> None:
+        """
+            Method used to load a pre-trained checkpoint for the given
         :return:
-        :raises InvalidModeError:       if it is not in evaluate mode
         """
-        if self._mode != 'EVALUATE':
-            raise InvalidModeError("Invalid mode. Is %s, should be 'EVALUATE'" % self._mode)
+        file1 = path + "/weights.pkl"
+        file2 = path + "/As.pkl"
+        file3 = path + "/sigma.pkl"
 
-        self.print_msg(("", strings.LINE_DELIMITER, "STARTED EVALUATION"))
+        def get(file):
+            with open(file, 'rb') as fout:
+                data = load(fout)
+            return data
 
-        trainX_class1_DF = self._trainXs[self._trainYs['SHOW'] == 1]
-        trainX_class2_DF = self._trainXs[self._trainYs['HIDE'] == 1]
+        self.weights = get(file1)
+        self.As = get(file2)
+        self.sigma = get(file3)
 
-        c1Xs = trainX_class1_DF.as_matrix()
-        c2Xs = trainX_class2_DF.as_matrix()
+    def save_checkpoint(self,
+                        path: str) -> None:
+        """
+            Method that saves a pre-trained checkpoint of the model
 
-        testXs = self._testXs.as_matrix()
+        :param path:    Path to the directory where to save the model parameters
 
-        print(self._testYs.columns.values)
+        :return: -
+        """
+        file1 = path + "/weights.pkl"
+        file2 = path + "/As.pkl"
+        file3 = path + "/sigma.pkl"
 
-        self.print_msg(("", "Splited data into 'SHOW' and 'HIDE' nodes",
-                        ("     %.6f labelled as SHOW", (len(trainX_class1_DF)/ len(self._trainXs))),
-                        ("     %.6f labelled as HIDE", (len(trainX_class2_DF))/ len(self._trainXs))))
+        def save(file, data):
+            with open(file, 'wb') as fout:
+                dump(data, fout)
 
-        print("Starting to calculate the exponentials")
+        save(file1, self.weights)
+        save(file2, self.As)
+        save(file3, self.sigma)
 
-        exp_c1 = [
-            [
-                np.exp(
-                    - np.sum(
-                        [
-                            ((test_value[idx] - c1X[idx]) ** 2) * 0.5
-                            for idx in range(len(test_value))
-                        ]
-                    )
-                ) for c1X in c1Xs
-            ] for test_value in testXs
-        ]
+    def setup(self,
+              input_dim: tuple,
+              **kwargs):
 
-        print("Finished for 1st class...")
+        if isinstance(self.config, PredictConfig):
+            self.load_checkpoint()
+        else:
+            return
 
-        exp_c2 = [
-            [
-                np.exp(
-                    - np.sum(
-                        [
-                            ((test_value[idx] - c2X[idx]) ** 2) * 0.5
-                            for idx in range(len(test_value))
-                        ]
-                    )
-                ) for c2X in c2Xs
-            ] for test_value in testXs
-        ]
+    def train(self,
+              trainX,
+              trainY,
+              validateX,
+              validateY,
+              save_checkpoint: bool = False):
+        """
+            Method used in training the model based
+            on a provided dataset
 
-        Y1s = [np.sum(exp_y1) / (1.0 * len(c1Xs)) for exp_y1 in exp_c1]
-        Y2s = [np.sum(exp_y2) / (1.0 * len(c2Xs)) for exp_y2 in exp_c2]
+        :param trainX:
+        :param trainY:
+        :param validateX:
+        :param validateY:
+        :param save_checkpoint:     Whether to save the checkpoint after training or not.
+                                    Only available during running in TrainingConfig configuration
 
-        print("Done calculating exponentials")
+        :return:                    -
+        """
+        assert(isinstance(self.config, (TrainConfig, EvalConfig, )))
+        assert(isinstance(self.config, TrainConfig) or not save_checkpoint)
 
-        results = [
-            {
-                "SHOW": Y1s[idx] >= Y2s[idx],
-                "HIDE": Y2s[idx] > Y1s[idx]
-            } for idx in range(len(Y1s))
-        ]
+        if validateX is not None or validateY is not None:
+            print("Warning: The PNN does not require a validation set! Just ignoring it for now.")
 
-        print("====================================")
-        print("Got final results!")
-        print("%d entries in the results list" % len(results))
-        print("%.6f classed as HIDE" % float((sum([1 if result["HIDE"] else 0 for result in results]) / len(results))))
-        print("%.6f classed as SHOW" % float((sum([1 if result["SHOW"] else 0 for result in results]) / len(results))))
-        print("===========================")
+        self.weights = np.empty(
+            shape=trainX.shape,
+            dtype=float
+        )
 
-        print("Now performing the actual evaluation")
+        self.As = np.empty(
+            shape=trainY.shape,
+            dtype=int
+        )
 
-        return self.get_stats(results, self._testYs)
+        for i in range(len(trainX)):
+
+            self.weights = self._normalize(array=trainX[i, :])
+            self.As[i, :] = trainY[i, :]
+
+        sigmas = [2*np.sum(trainY[:, 0])**2, 2*np.sum(trainY[:, 1])**2]
+        self.sigma = np.array(sigmas)
+
+        self.built = True
+
+        if save_checkpoint:
+            self.save_checkpoint(
+                path=self.config.CHECKPOINTS_PATH + "/pnn"
+            )
+
+    def predict_class(self,
+                      data: np.ndarray) -> np.ndarray:
+        """
+            Method used to predict the class for a set of input feature vectors.
+            The predicted class will be argmax(g_c), where c is one of 'SHOW' or 'HIDE'
+            and g_c is the Parzen estimate for class c given a feature vector x
+
+        :param data:        the data used for prediction
+        :return:            a list of predicted classes
+        """
+
+        parzen_est = self._get_parzen_estimates(data)
+
+        classes = np.empty(
+            shape=parzen_est.shape,
+            dtype=int
+        )
+
+        for idx in range(len(classes)):
+            if parzen_est[idx, 0] >= parzen_est[idx, 1]:
+                classes[idx, 0] = 1
+                classes[idx, 1] = 0
+            else:
+                classes[idx, 0] = 0
+                classes[idx, 1] = 0
+
+        return classes
+
+    def predict_probs(self,
+                      data: np.ndarray) -> np.ndarray:
+        """
+
+        :param data:
+        :return:
+        """
+
+        parzen_est = self._get_parzen_estimates(data)
+
+        probs = np.empty(
+            shape=parzen_est.shape,
+            dtype=float
+        )
+
+        for idx in range(len(probs)):
+            probs[idx, 0] = parzen_est[idx, 0] / (parzen_est[idx, 0] + parzen_est[idx, 1])
+            probs[idx, 1] = parzen_est[idx, 1] / (parzen_est[idx, 0] + parzen_est[idx, 1])
+
+        return probs
