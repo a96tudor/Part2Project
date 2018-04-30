@@ -1,5 +1,5 @@
 """
-Part2Project -- mlp.py
+Part2Project -- cnn.py.py
 
 Copyright Apr 2018 [Tudor Mihai Avram]
 
@@ -16,9 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
+from keras.models import Sequential
+
+from keras.layers import Reshape
+from keras.layers import Conv1D
 from keras.layers import Dropout
 from keras.layers import Input
-from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.layers import BatchNormalization
@@ -30,19 +33,19 @@ from models import Model
 from models.config import *
 
 
-class MultilayerPerceptron(Model):
+class ConvolutionalNeuralNetwork(Model):
     """
-        Class representing a multilayer perceptron.
+        Class representing the CNN implemented as part of the project
     """
 
     def __init__(self,
                  config: ModelConfig):
         """
+            CONSTRUCTOR
 
-        :param config:      The configuration the model is being run in
+        :param config:      Configuration used when running the model
         """
-
-        super(MultilayerPerceptron, self).__init__(config)
+        super(ConvolutionalNeuralNetwork, self).__init__(config)
 
         self.model = Sequential()
 
@@ -74,49 +77,52 @@ class MultilayerPerceptron(Model):
               input_dim: tuple,
               **kwargs) -> None:
         """
-            Method that builds the NN architecture
 
-        :param input_dim:   The dimension of the inputs
-        :param kwargs:      Other arguments. Not used here
-        :return:            -
+        :param input_dim:       The shape of the input
+        :param kwargs:          Other arguments. Not used here
+
+        :return:                -
         """
         assert not self.built
-        # Defining layers
-        batchNormLayer1 = BatchNormalization(
+
+        # Defining the layers
+        reshapeLayer = Reshape(
+            (1, input_dim[0]),
             input_shape=input_dim
         )
 
-        inputLayer = Input()
+        batchNormLayer1 = BatchNormalization()
 
-        dropoutInputLayer = Dropout(
-            rate=.2
-        )
-
-        denseLayer1 = Dense(
+        convLayer1 = Conv1D(
             32,
-            activation='relu',
+            kernel_size=2,
+            padding='casual'
+        )
+
+        convLayer2 = Conv1D(
+            64,
+            kernel_size=2,
+            padding='casual'
+        )
+
+        convLayer3 = Conv1D(
+            128,
+            kernel_size=2,
+            padding='casual'
+        )
+
+        dropoutLayer = Dropout(
+            0.2
+        )
+
+        denseLayer = Dense(
+            32,
+            kernel_initializer='uniform',
             kernel_regularizer=L1L2(l1=.0, l2=.1),
-            kernel_initializer='uniform'
+            activation='relu'
         )
 
-        bathNormLayer2 = BatchNormalization()
-
-        dropoutDenseLayer1 = Dropout(
-            rate=.2
-        )
-
-        denseLayer2 = Dense(
-            16,
-            activation='relu',
-            kernel_regularizer=L1L2(l1=.0, l2=.1),
-            kernel_initializer='uniform'
-        )
-
-        bathNormLayer3 = BatchNormalization()
-
-        dropoutDenseLayer2 = Dropout(
-            rate=.2
-        )
+        batchNormLayer2 = BatchNormalization()
 
         outputLayer = Dense(
             2,
@@ -124,26 +130,23 @@ class MultilayerPerceptron(Model):
             kernel_initializer='uniform'
         )
 
-        # adding the layers
+        # Adding them to the model
+        self.model.add(reshapeLayer)
         self.model.add(batchNormLayer1)
-        self.model.add(inputLayer)
-        self.model.add(dropoutInputLayer)
-        self.model.add(denseLayer1)
-        self.model.add(bathNormLayer2)
-        self.model.add(dropoutDenseLayer1)
-        self.model.add(denseLayer2)
-        self.model.add(bathNormLayer3)
-        self.model.add(dropoutDenseLayer2)
+        self.model.add(convLayer1)
+        self.model.add(convLayer2)
+        self.model.add(convLayer3)
+        self.model.add(dropoutLayer)
+        self.model.add(denseLayer)
+        self.model.add(batchNormLayer2)
         self.model.add(outputLayer)
 
-        # compiling the model
+        # Compiling the model
         self.model.compile(
             optimizer=Adam(),
             loss='categorical_crossentropy',
             metrics=['accuracy']
         )
-
-        self.built = True
 
     def train(self,
               trainX,
@@ -174,7 +177,7 @@ class MultilayerPerceptron(Model):
                 epochs=1000
             )
         else:
-            path = self.config.CHECKPOINTS_PATH + "/mlp.hdf5"
+            path = self.config.CHECKPOINTS_PATH + "/cnn.hdf5"
             callback = ModelCheckpoint(
                 filepath=path,
                 save_best_only=True
@@ -229,3 +232,4 @@ class MultilayerPerceptron(Model):
                 verbose=0
             )
         )
+
