@@ -213,4 +213,3 @@ class ProbabilisticNeuralNetwork(Model):
             probs[idx, 1] = parzen_est[idx, 1] / (parzen_est[idx, 0] + parzen_est[idx, 1])
 
         return probs
-    
