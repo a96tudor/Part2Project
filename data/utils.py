@@ -57,6 +57,7 @@ def read_csv(path, label_cols, drop_cols=None, normalize=True):
 
     return df
 
+
 def read_data_from_csv(file, label_cols, drop_cols=None, split=True, normalize=True, shuffle=True):
     """
     :param file:            Path to the csv file where to read the data from

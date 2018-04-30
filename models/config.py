@@ -17,6 +17,7 @@ limitations under the License.
 
 """
 from models.evaluation import metrics
+from data.features.constants import FEATURES_ONE_HOT
 
 
 class ModelConfig(object):
@@ -28,18 +29,7 @@ class ModelConfig(object):
         'SHOW',
         'HIDE'
     ]
-    FEATURES = [
-        'NODE_TYPE',
-        'NEIGH_TYPE',
-        'EDGE_TYPE',
-        'WEB_CONN',
-        'NEIGH_WEB_CONN',
-        'UID_STS',
-        'GID_STS',
-        'VERSION',
-        'SUSPICIOUS',
-        'EXTERNAL'
-    ]
+    FEATURES = FEATURES_ONE_HOT
 
 
 class TrainConfig(ModelConfig):
@@ -49,6 +39,7 @@ class TrainConfig(ModelConfig):
     DATA_PATH = 'data/training/training-set.csv'
     SHUFFLE = False  # If we want to shuffle the dataset. Useful for evaluation
     NORMALIZE = True  # We want to normalize the data first.
+
 
 
 class EvalConfig(ModelConfig):

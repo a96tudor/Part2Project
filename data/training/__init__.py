@@ -89,7 +89,6 @@ def generate_training_set(host,
     LIMIT_HIDE_NODES = 20000
     hide_nodes = all_nodes[:min(LIMIT_HIDE_NODES, len(all_nodes))]
 
-
     print("=======================================================================")
     print("Finished adding nodes based on rules! Added " + str(ts.shape[0]) + " 1-labeled entries in total!")
     print("Now onto 0-labeled nodes...")

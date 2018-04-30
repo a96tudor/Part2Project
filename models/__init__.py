@@ -1,61 +1,136 @@
-from models.logistic_regression import LogisticRegression
-from data import utils
+"""
+Part2Project -- __init__.py.py
+
+Copyright Apr 2018 [Tudor Mihai Avram]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+"""
+from data.utils import read_csv, split_dataframe
+from models.config import *
+import numpy as np
 import pandas as pd
-from models.pnn import ProbabilisticNeuralNetwork
-import json
-from data import utils
+import abc
 
-_STR_TO_MODEL = {
-    "logistic": LogisticRegression,
-    "pnn": ProbabilisticNeuralNetwork
-}
-
-NUM_ITER = 20
-
-K_FOLD_PERCENTILE = .90
-
-
-def evaluate(model_name, paths=('data/tmp/train.csv', 'data/tmp/test/csv'), log=False):
+class Model(object):
     """
-    :param model_name:   The model we want to evaluate, as a string
-                            It can be:
-                                - logistic
-    :param paths:       (training_set path, test_test path) touple
-    :param log:         Whether we want to log everything
-    :return:            -
+        ABSTRACT base class for the ML models implemented
     """
 
-    path = 'data/training/training_set.csv'
+    def __init__(self,
+                 config: ModelConfig):
+        """
+            CONSTRUCTOR
 
-    model = _STR_TO_MODEL[model_name](
-        data_path=path,
-        evaluate=True
-    )
+        :param config:      The configuration used when running the model
+        """
+        self.config = config
+        self.built = False
 
-    df = pd.read_csv('data/training/training_set_big.csv')
+    @abc.abstractclassmethod
+    def save_checkpoint(self,
+                        path: str) -> None:
+        pass
 
-    results = dict()
+    @abc.abstractclassmethod
+    def setup(self,
+              input_dim: tuple,
+              **kwargs) -> None:
 
-    results['methodology'] = 'K-FOLD Cross Validation'
-    results['iterations'] = int(1/(1-K_FOLD_PERCENTILE))
-    results['percentile'] = K_FOLD_PERCENTILE
+        pass
 
-    results['metrics'] = dict()
+    @abc.abstractclassmethod
+    def train(self,
+              trainX,
+              trainY,
+              validateX,
+              validateY,
+              save_checkpoint: bool = False) -> None:
 
-    NUM_ITER = int(1/(1-K_FOLD_PERCENTILE))
+        pass
 
-    for idx in range(NUM_ITER + 1):
-        results['metrics'][idx] = model.evaluate()
-        print("Iteration: %d" % (idx+1))
+    @abc.abstractclassmethod
+    def predict_class(self,
+                      data: np.ndarray) -> list:
 
-        utils.print_dict(results['metrics'][idx])
-        model.renew_split(idx+1, percentile=K_FOLD_PERCENTILE)
+        pass
 
-    path_results = 'data/results/' + model_name + "/3.json"
+    @abc.abstractclassmethod
+    def predict_probs(self,
+                      data: np.ndarray) -> list:
 
-    results['summary'] = {
-        key: float(sum([results['metrics'][idx][key] for idx in range(NUM_ITER)])/NUM_ITER)
-                for key in results['metrics'][0]}
+        pass
 
-    with open(path_results, 'w') as fout:
-        json.dump(results, fout)
+    def evaluate(self,
+                 path_to_dataset: str) -> dict:
+        """
+
+            Method that evaluates the model using the K-fold Cross Validation
+            technique.
+
+        :param path_to_dataset:     The path to the dataset we're loading for evaluation
+        :return:                    The resulting metrics
+        """
+
+        assert(isinstance(self.config, EvalConfig))
+
+        dataset = read_csv(
+            path=path_to_dataset,
+            label_cols=self.config.LABELS
+        )
+
+        results = dict()
+
+        for test_section in range(1, 11):
+
+            Xs, Ys, testXs_df, testYs_df = split_dataframe(
+                df=dataset,
+                test_part=test_section,
+                label_cols=self.config.LABELS
+            )
+
+            testXs = testXs_df.as_matrix(columns=self.config.FEATURES)
+            testYs = testYs_df.as_matrix(columns=self.config.LABELS)
+
+            for validation_section in range(1, 11):
+
+                full_train = pd.concat([Xs, Ys], axis=1, ignore_index=True)
+
+                trainXs_df, trainYs_df, validXs_df, validYs_df = split_dataframe(
+                    df=full_train,
+                    test_part=validation_section,
+                    label_cols=self.config.LABELS
+                )
+
+                trainXs = trainXs_df.as_matrix(columns=self.config.FEATURES)
+                trainYs = trainYs_df.as_matrix(columns=self.config.LABELS)
+                validXs = validXs_df.as_matrix(columns=self.config.FEATURES)
+                validYs = validYs_df.as_matrix(columns=self.config.LABELS)
+
+                self.train(
+                    trainX=trainXs,
+                    trainY=trainYs,
+                    validateX=validXs,
+                    validateY=validYs
+                )
+
+                predict_Ys = self.predict_class(testXs)
+
+                results[(test_section, validation_section, )] = dict()
+
+                for m in self.config.metrics:
+                    results[(test_section, validation_section, )][m] = self.config.metrics[m](
+                        predict_Ys,
+                        testYs
+                    )
+        return results

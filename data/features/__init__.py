@@ -178,7 +178,6 @@ def build_training_set(host: str,
         with open(rule_file) as f:
             rule_query = f.read()
             result = driver.execute_query(rule_query)
-            show_nodes = show_nodes + result
 
             for node in result:
                 try:
@@ -194,8 +193,10 @@ def build_training_set(host: str,
                 nodes=result,
                 for_gat=for_gat,
                 include_NONE=False,
-                shuffle=True
+                shuffle=False
             )
+
+            show_nodes = show_nodes + result
 
             for node in features:
                 features[node]['SHOW'] = 1
@@ -210,7 +211,7 @@ def build_training_set(host: str,
     # present in the actual database
     limit_for_hide = int((.7/.3) * len(RULES_TO_RUN) * limit_per_rule)
 
-    print("Finished adding all SHOW labeled nodes. Added %d in total.\n" % len(show_nodes))
+    print("Finished adding all SHOW labeled nodes. Added %d in total.\n" % len(full_results))
 
     hide_nodes = all_nodes[:min(len(all_nodes), limit_for_hide)]
 
@@ -229,11 +230,10 @@ def build_training_set(host: str,
         features[node]['HIDE'] = 1
 
     full_results.update(features)
+    full_results = shuffle_dict(full_results)
 
     if not save_to_disk:
         return full_results
-
-    full_results = shuffle_dict(full_results)
 
     if save_in_format == 'json':
         file_path = "%s/%s" % (save_in_dir, filename)
@@ -245,6 +245,9 @@ def build_training_set(host: str,
 
         df.to_csv(file_path, index=True)
 
+    return full_results
+
+
 def build_df_from_dict(data: dict):
     """
 
@@ -254,11 +257,11 @@ def build_df_from_dict(data: dict):
     df = pd.DataFrame(columns=FEATURES_ONE_HOT + ['SHOW', 'HIDE'])
 
     for node in data:
-        new_entry = node['self']
-        new_entry['SHOW'] = node['SHOW']
-        new_entry['HIDE'] = node['HIDE']
+        new_entry = data[node]['self']
+        new_entry['SHOW'] = data[node]['SHOW']
+        new_entry['HIDE'] = data[node]['HIDE']
 
-        new_df = pd.DataFrame.from_dict(new_entry)
+        new_df = pd.DataFrame(new_entry, index=[0])
 
         df = pd.concat([df, new_df], axis=0, ignore_index=True)
 
