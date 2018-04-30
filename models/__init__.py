@@ -38,6 +38,11 @@ class Model(object):
         self.built = False
 
     @abc.abstractclassmethod
+    def load_checkpoint(self,
+                        path: str) -> None:
+        pass
+
+    @abc.abstractclassmethod
     def save_checkpoint(self,
                         path: str) -> None:
         pass
