@@ -36,6 +36,7 @@ class Model(object):
         """
         self.config = config
         self.built = False
+        self.trained = False
 
     @abc.abstractclassmethod
     def load_checkpoint(self,
