@@ -199,7 +199,7 @@ def print_dict(data):
         print("%s: %.5f" % (str(key), float(data[key])))
 
 
-def shuffle_dict(data: dict):
+def shuffle_dict(data: dict) -> dict:
     """
         Method that shuffles a given dictionary
 
@@ -217,6 +217,22 @@ def shuffle_dict(data: dict):
 
     return result
 
+
+def shuffle_list(data: list) -> list:
+    """
+        Method that shuffles a given list
+
+    :param data:        The list to shuffle
+    :return:            THe shuffled list
+    """
+    keys = list(range(len(data)))
+    random.shuffle(keys)
+    result = list()
+
+    for key in keys:
+        result.append(data[key])
+
+    return result
 
 def dump_json(data,
               filename):
