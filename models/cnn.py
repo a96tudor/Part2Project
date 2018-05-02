@@ -232,4 +232,3 @@ class ConvolutionalNeuralNetwork(Model):
                 verbose=0
             )
         )
-
