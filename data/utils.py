@@ -234,6 +234,7 @@ def shuffle_list(data: list) -> list:
 
     return result
 
+
 def dump_json(data,
               filename):
     """
@@ -252,3 +253,21 @@ def dump_json(data,
 
     with open(filename, 'w') as fout:
         json.dump(data, fout)
+
+
+def intersect_two_lists(l1: list,
+                        l2: list) -> list:
+    """
+        Method used to intersect two given lists
+
+    :param l1:          The first list
+    :param l2:          The second list
+    :return:            Their intersection, as a new list
+    """
+    result = list()
+
+    for x in l1:
+        if x in l2:
+            result.append(x)
+
+    return result

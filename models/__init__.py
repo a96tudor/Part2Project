@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import abc
 
+
 class Model(object):
     """
         ABSTRACT base class for the ML models implemented

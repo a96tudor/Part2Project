@@ -450,7 +450,10 @@ class FeatureExtractor(object):
             """
             if any(node[x] is None for x in node):
                 if include_NONE:
-                    result[(node['uuid'], node['timestamp'], )] = None
+                    result.append({
+                        'id': (node['uuid'], node['timestamp'], ),
+                        'self': None
+                    })
                 continue
 
             node_type = self._get_node_type(node['uuid'], node['timestamp'])
@@ -638,6 +641,9 @@ class FeatureExtractor(object):
             print(PROGRESS_REPORT[last_step] % (cnt_done, total))
 
         for node in self._nodes:
+
+            if any(node[x] is None for x in node):
+                continue
 
             neighs = self._get_neighbours_for_node(
                 uuid=node['uuid'],

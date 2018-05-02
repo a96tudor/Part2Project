@@ -18,13 +18,13 @@ limitations under the License.
 """
 from data.neo4J.database_driver import AnotherDatabaseDriver
 from data.features.feature_extractor import FeatureExtractor
-from data.features.constants import SUPPORTED_FILE_FORMATS, FEATURES_ONE_HOT
+from data.features.constants import SUPPORTED_FILE_FORMATS, FEATURES_ONE_HOT, LABELS, ACCEPTED_NODE_TYPES
 from cypher_statements.config import RULES_TO_RUN
 import pandas as pd
+import pickle
 
 import json
-from data.utils import shuffle_dict, dump_json, shuffle_list
-
+from data.utils import shuffle_dict, dump_json, shuffle_list, intersect_two_lists
 
 def search_in_list(id: tuple,
                    nodes: list) -> list:
@@ -91,8 +91,11 @@ def get_dataset(driver: AnotherDatabaseDriver,
                     extracted_idx = search_in_list(tp, extracted)
                     if len(extracted_idx) != 0 and extracted[extracted_idx[0]]['self'] is not None:
                         node['neighs'].append(extracted[extracted_idx[0]]['self'])
-                    else:
+                    elif neigh not in to_extract:
                         to_extract.append(neigh)
+
+            if len(to_extract) == 0:
+                continue
 
             fe = FeatureExtractor(
                 nodes=to_extract,
@@ -102,8 +105,11 @@ def get_dataset(driver: AnotherDatabaseDriver,
 
             new_nodes = fe.get_feature_matrix(include_NONE=False)
 
+            if len(new_nodes) == 0:
+                new_nodes.append(node)
+
             for neigh in new_nodes:
-                features[node]['neighs'].append(new_nodes[neigh]['self'])
+                node['neighs'].append(neigh['self'])
 
             extracted = extracted + new_nodes
 
@@ -219,7 +225,7 @@ def build_training_set(host: str,
 
             print("     Added " + str(len(features)) + " new entries!")
 
-            full_results.append(features)
+            full_results += features
 
     # Setting the HIDE nodes limit so that the training set
     # roughly follows the 30-70 distribution of SHOW/HIDE nodes
@@ -244,7 +250,7 @@ def build_training_set(host: str,
         node['SHOW'] = 0
         node['HIDE'] = 1
 
-    full_results.append(features)
+    full_results += features
     full_results = shuffle_list(full_results)
 
     if not save_to_disk:
@@ -258,7 +264,10 @@ def build_training_set(host: str,
         df = build_df_from_list(full_results)
         file_path = "%s/%s" % (save_in_dir, filename)
 
-        df.to_csv(file_path, index=True)
+        if save_in_format == 'df':
+            df.to_csv(file_path, index=True)
+        elif save_in_format == 'bin':
+            save_as_binary(path=save_in_dir, data=df)
 
     return full_results
 
@@ -282,3 +291,55 @@ def build_df_from_list(data: list):
 
     return df
 
+
+def save_as_binary(data: pd.DataFrame,
+                   path: str) -> None:
+    """
+
+    :param data:
+    :param path:
+    :return:
+    """
+
+    def save(file, data):
+        with open(file, 'wb') as fout:
+            pickle.dump(data, fout)
+
+    Xs = data[FEATURES_ONE_HOT]
+    Ys = data[LABELS]
+
+    fileXs = "%s/Xs.pkl" % path
+    fileYs = "%s/Ys.pkl" % path
+
+    save(file=fileXs, data=Xs)
+    save(file=fileYs, data=Ys)
+
+
+def get_node_type(driver: AnotherDatabaseDriver,
+                  uuid: str,
+                  timestamp: int) -> str:
+    """
+
+    :param driver:          The Neo4J driver used when running the query
+    :param uuid:            The unique node ID used to identify the node
+    :param timestamp:       The timestamp of the node in question
+
+    :return:                The node type, as a string
+    """
+
+    query = "match(n {uuid: '%s', timestamp: %d}) " \
+            "return labels(n) limit 1" % (uuid, timestamp)
+
+    labels = driver.execute_query(query)
+
+    if len(labels) == 0:
+        return 'N/A'
+
+    labels = labels[0]['labels(n)']
+
+    intersect = intersect_two_lists(l1=labels, l2=ACCEPTED_NODE_TYPES)
+
+    if len(intersect) != 1:
+        return 'N/A'
+
+    return intersect[0]

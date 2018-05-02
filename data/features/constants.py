@@ -107,3 +107,12 @@ SUPPORTED_FILE_FORMATS = [
     'df',
     'json'
 ]
+
+ACCEPTED_NODE_TYPES = [
+    'File',
+    'Process',
+    'Socket',
+    'Meta',
+    'Pipe',
+    'Machine'
+]
