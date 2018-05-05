@@ -271,3 +271,15 @@ def intersect_two_lists(l1: list,
             result.append(x)
 
     return result
+
+
+def get_new_filename_in_dir(dir_path: str,
+                            format: str = 'json') -> str:
+    """
+
+    :param dir_path:    The directory were we're looking in
+    :param format:      The format we want the file to be in
+    :return:            The full path to the new file
+    """
+
+

@@ -24,11 +24,17 @@ from models.mlp import MultilayerPerceptron
 from models.logistic_regression import LogisticRegression
 from models.gat import GraphAttentionNetwork
 
-
 import numpy as np
 import pandas as pd
 import abc
 
+_ACCEPTED_MODELS = {
+    'cnn': ConvolutionalNeuralNetwork,
+    'pnn': ProbabilisticNeuralNetwork,
+    'mlp': MultilayerPerceptron,
+    'logreg': LogisticRegression,
+    'gat': GraphAttentionNetwork
+}
 
 class Model(object):
     """
@@ -86,7 +92,8 @@ class Model(object):
         pass
 
     def evaluate(self,
-                 path_to_dataset: str) -> dict:
+                 path_to_dataset: str,
+                 save: bool=True) -> dict:
         """
 
             Method that evaluates the model using the K-fold Cross Validation
@@ -145,8 +152,32 @@ class Model(object):
                 for m in self.config.metrics:
                     results[(test_section, validation_section, )][m] = self.config.metrics[m](
                         predict_Ys,
-                        testYs
+                        testYs[:, 0]
                     )
+        if save:
+            file_path =
+
         return results
 
-def get_model():
+
+def get_model(name: str,
+              config: ModelConfig) -> Model:
+    """
+        Method that initiates and sets up a model, based on
+        the model name and the configuration
+        the model will be run in.
+
+    :param name:            The name of the model
+    :param config:          The configuration the file will be run in
+
+    :return:                The resulting model object
+    """
+
+    assert(name in _ACCEPTED_MODELS)
+
+    model = _ACCEPTED_MODELS[name](config)
+
+    model.setup(input_dim=config.INPUT_DIM)
+
+    return model
+

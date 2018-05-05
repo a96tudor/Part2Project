@@ -25,10 +25,10 @@ from keras.optimizers import Adam
 from keras.models import Model
 from models.config import *
 from keras.regularizers import l2
-from models.metrics import *
+from models.evaluation.metrics import *
 
 
-class GraphAttentionNetwork:
+class GraphAttentionNetwork(Model):
     """
         Class representing a Graph Attention Network
     """
@@ -41,7 +41,8 @@ class GraphAttentionNetwork:
 
         :param config:      The configuration used by the model in question
         """
-        self.config = config
+        super(GraphAttentionNetwork, self).__init__(config)
+
         self.model = None           # To be configured in setup()
 
     def setup(self,
