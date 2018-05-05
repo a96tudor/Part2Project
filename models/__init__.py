@@ -18,9 +18,12 @@ limitations under the License.
 """
 from data.utils import read_csv, split_dataframe
 from models.config import *
+
+
 import numpy as np
 import pandas as pd
 import abc
+
 
 class Model(object):
     """
@@ -134,3 +137,5 @@ class Model(object):
                         testYs
                     )
         return results
+
+def get_model():

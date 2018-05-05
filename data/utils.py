@@ -199,7 +199,7 @@ def print_dict(data):
         print("%s: %.5f" % (str(key), float(data[key])))
 
 
-def shuffle_dict(data: dict):
+def shuffle_dict(data: dict) -> dict:
     """
         Method that shuffles a given dictionary
 
@@ -214,6 +214,23 @@ def shuffle_dict(data: dict):
 
     for key in keys:
         result[key] = data[key]
+
+    return result
+
+
+def shuffle_list(data: list) -> list:
+    """
+        Method that shuffles a given list
+
+    :param data:        The list to shuffle
+    :return:            THe shuffled list
+    """
+    keys = list(range(len(data)))
+    random.shuffle(keys)
+    result = list()
+
+    for key in keys:
+        result.append(data[key])
 
     return result
 
@@ -236,3 +253,21 @@ def dump_json(data,
 
     with open(filename, 'w') as fout:
         json.dump(data, fout)
+
+
+def intersect_two_lists(l1: list,
+                        l2: list) -> list:
+    """
+        Method used to intersect two given lists
+
+    :param l1:          The first list
+    :param l2:          The second list
+    :return:            Their intersection, as a new list
+    """
+    result = list()
+
+    for x in l1:
+        if x in l2:
+            result.append(x)
+
+    return result

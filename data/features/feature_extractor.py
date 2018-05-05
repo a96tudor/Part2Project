@@ -431,7 +431,7 @@ class FeatureExtractor(object):
         :return:                A pandas dict containing all the features
         """
 
-        result = dict()
+        result = list()
         cnt_done = 0
 
         if self._verbose:
@@ -450,7 +450,10 @@ class FeatureExtractor(object):
             """
             if any(node[x] is None for x in node):
                 if include_NONE:
-                    result[(node['uuid'], node['timestamp'], )] = None
+                    result.append({
+                        'id': (node['uuid'], node['timestamp'], ),
+                        'self': None
+                    })
                 continue
 
             node_type = self._get_node_type(node['uuid'], node['timestamp'])
@@ -458,7 +461,10 @@ class FeatureExtractor(object):
             if node_type not in ACCEPTED_NODES:
                 # We're not going to care about this entry
                 if include_NONE:
-                    result[(node['uuid'], node['timestamp'], )] = None
+                    result.append({
+                        'id': (node['uuid'], node['timestamp'], ),
+                        'self': None
+                    })
                 continue
 
             for feature in NODE_TYPE_FEATURES:
@@ -467,13 +473,15 @@ class FeatureExtractor(object):
                 else:
                     node_features[feature] = 0.0
 
-
             deg = self._get_node_degree(node['uuid'], node['timestamp'])
 
             if deg is None:
                 if include_NONE:
-                    result[(node['uuid'], node['timestamp'], )] = None
-                continue
+                    result.append({
+                        'id': (node['uuid'], node['timestamp'], ),
+                        'self': None
+                    })
+                    continue
             node_features['DEGREE'] = deg
 
             """
@@ -487,18 +495,27 @@ class FeatureExtractor(object):
 
             if neigh_data is None:
                 if include_NONE:
-                    result[(node['uuid'], node['timestamp'], )] = None
+                    result.append({
+                        'id': (node['uuid'], node['timestamp'], ),
+                        'self': None
+                    })
                 continue
 
             if any(neigh_data[x] is None for x in neigh_data):
                 if include_NONE:
-                    result[(node['uuid'], node['timestamp'], )] = None
+                    result.append({
+                        'id': (node['uuid'], node['timestamp'], ),
+                        'self': None
+                    })
                 continue
 
             if neigh_data['type'] not in ACCEPTED_NODES:
                 # We're not going to care about this entry
                 if include_NONE:
-                    result[(node['uuid'], node['timestamp'], )] = None
+                    result.append({
+                        'id': (node['uuid'], node['timestamp'], ),
+                        'self': None
+                    })
                 continue
 
             for feature in NEIGH_TYPE_FEATURES:
@@ -601,8 +618,10 @@ class FeatureExtractor(object):
                     last_step -= PROGRESS_REPORT['step']
                     print(PROGRESS_REPORT[last_step/100] % (cnt_done, total))
 
-            result[(node['uuid'], node['timestamp'],)] = dict()
-            result[(node['uuid'], node['timestamp'],)]['self'] = node_features
+            result.append({
+                'id': (node['uuid'], node['timestamp'],),
+                'self': node_features
+            })
 
         return result
 
@@ -613,7 +632,7 @@ class FeatureExtractor(object):
 
         :return:
         """
-        result = dict()
+        result = list()
         if self._verbose:
             cnt_done = 0
             total = len(self._nodes)
@@ -623,11 +642,17 @@ class FeatureExtractor(object):
 
         for node in self._nodes:
 
+            if any(node[x] is None for x in node):
+                continue
+
             neighs = self._get_neighbours_for_node(
                 uuid=node['uuid'],
                 timestamp=node['timestamp']
             )
 
-            result[(node['uuid'], node['timestamp'],)] = neighs
+            result.append({
+                'id': (node['uuid'], node['timestamp'],),
+                'neighs': neighs
+            })
 
         return result
