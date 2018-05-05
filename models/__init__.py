@@ -18,6 +18,12 @@ limitations under the License.
 """
 from data.utils import read_csv, split_dataframe
 from models.config import *
+from models.cnn import ConvolutionalNeuralNetwork
+from models.pnn import ProbabilisticNeuralNetwork
+from models.mlp import MultilayerPerceptron
+from models.logistic_regression import LogisticRegression
+from models.gat import GraphAttentionNetwork
+
 import numpy as np
 import pandas as pd
 import abc
