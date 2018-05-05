@@ -73,7 +73,7 @@ class GraphAttentionNetwork:
         gat_layer = GraphAttention(
             newF=attn_output_lng,
             kernel_regularizer=l2(l2_reg),
-            activation='elu'
+            activation='relu'
         )([dropout1, A])
 
         dropout2 = Dropout(rate=dropout_rate)(gat_layer)
