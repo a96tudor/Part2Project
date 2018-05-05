@@ -44,6 +44,7 @@ class GraphAttentionNetwork(Model):
         super(GraphAttentionNetwork, self).__init__(config)
 
         self.model = None           # To be configured in setup()
+        self.name = 'gat'
 
     def setup(self,
               features_cnt: int,

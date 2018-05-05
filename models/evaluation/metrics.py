@@ -21,7 +21,7 @@ import numpy as np
 
 
 def get_confusion_matrix(y_true: np.ndarray,
-                         y_pred: np.ndarray) -> (int, int, int, int):
+                         y_pred: np.ndarray) -> list:
     """
         Method that takes the predicted and true values and
         returns the 4 elements of the confusion matrix in
@@ -37,10 +37,10 @@ def get_confusion_matrix(y_true: np.ndarray,
 
     :return:            The corresponding values
     """
-
+    
     tn, fp, fn, tp = confusion_matrix(y_pred=y_pred, y_true=y_true).ravel()
 
-    return tp, tn, fp, fn
+    return [tp, tn, fp, fn]
 
 
 def accuracy(y_true: np.ndarray,

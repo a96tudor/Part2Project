@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.utils import shuffle
 import random
 import json
+import os
 
 
 def get_features_and_labels(df, label_cols):
@@ -282,4 +283,21 @@ def get_new_filename_in_dir(dir_path: str,
     :return:            The full path to the new file
     """
 
+    existent_docs = [
+        {
+            'name': x.split('.')[0],
+            'format': x.split('.')[1]
+        } if len(x.split('.')) == 2 else None for x in os.listdir(dir_path)
+    ]
 
+    next_idx = 1
+
+    if len(existent_docs) > 0:
+        next_idx = max([
+                    int(x['name']) if x and x['format'] == format else 0
+                    for x in existent_docs
+                ]) + 1
+
+    file_path = "%s/%d.%s" % (dir_path, next_idx, format)
+
+    return file_path

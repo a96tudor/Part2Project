@@ -54,7 +54,7 @@ class EvalConfig(ModelConfig):
 
     METRICS = {
         "confusion_matrix": metrics.get_confusion_matrix,
-        "accuracy": metrics.accuracy
+        #"accuracy": metrics.accuracy
     }
     RESULTS_PATH = 'models/eval/results/'
 

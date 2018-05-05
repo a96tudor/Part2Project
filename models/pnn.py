@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 from data import utils
 import strings
-from models import Model
-from models.exceptions import InvalidModeError
+from models.model import Model
 from data.features.constants import *
 from models.config import *
 from pickle import dump, load
@@ -24,6 +23,7 @@ class ProbabilisticNeuralNetwork(Model):
         self.weights = None
         self.As = None
         self.sigma = None
+        self.name = 'pnn'
 
     def _normalize(self,
                    array: np.ndarray):

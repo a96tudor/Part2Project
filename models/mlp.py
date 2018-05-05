@@ -26,7 +26,7 @@ from keras.regularizers import L1L2
 from keras.callbacks import ModelCheckpoint
 import numpy as np
 
-from models import Model
+from models.model import Model
 from models.config import *
 
 
@@ -45,6 +45,7 @@ class MultilayerPerceptron(Model):
         super(MultilayerPerceptron, self).__init__(config)
 
         self.model = Sequential()
+        self.name = 'mlp'
 
     def load_checkpoint(self,
                         path: str) -> None:
@@ -86,8 +87,6 @@ class MultilayerPerceptron(Model):
             input_shape=input_dim
         )
 
-        inputLayer = Input()
-
         dropoutInputLayer = Dropout(
             rate=.2
         )
@@ -126,7 +125,6 @@ class MultilayerPerceptron(Model):
 
         # adding the layers
         self.model.add(batchNormLayer1)
-        self.model.add(inputLayer)
         self.model.add(dropoutInputLayer)
         self.model.add(denseLayer1)
         self.model.add(bathNormLayer2)
@@ -162,8 +160,8 @@ class MultilayerPerceptron(Model):
         :return:                        -
         """
         assert self.built
-        assert isinstance(self.config, (EvalConfig, TrainConfig, ))
-        assert isinstance(self.config, TrainConfig) or not save_checkpoint
+        assert self.config == EvalConfig or self.config == TrainConfig
+        assert self.config == TrainConfig or not save_checkpoint
 
         if not save_checkpoint:
             self.model.fit(
@@ -171,7 +169,8 @@ class MultilayerPerceptron(Model):
                 y=trainY,
                 validation_data=(validateX, validateY),
                 batch_size=100,
-                epochs=1000
+                epochs=1000,
+                verbose=0
             )
         else:
             path = self.config.CHECKPOINTS_PATH + "/mlp.hdf5"
@@ -185,7 +184,8 @@ class MultilayerPerceptron(Model):
                 validation_data=(validateX, validateY),
                 batch_size=100,
                 epochs=1000,
-                callbacks=[callback]
+                callbacks=[callback],
+                verbose=0
             )
 
         self.trained = True
@@ -197,16 +197,15 @@ class MultilayerPerceptron(Model):
         :param data:   feature matrix for which we do the predictions
         :return:       A numpy ndarray containing the classification results
         """
-        assert isinstance(self.config, (PredictConfig, EvalConfig, ))
+        assert self.config == PredictConfig or self.config == EvalConfig
         assert self.built
         assert self.trained
 
         return np.array(
-            self.model.predict(
+            self.model.predict_classes(
                 data,
-                batch_size=100,
-                steps=100,
-                verbose=0
+                verbose=0,
+                batch_size=100
             )
         )
 
@@ -217,15 +216,14 @@ class MultilayerPerceptron(Model):
         :param data:    feature matrix for which we do the predictions
         :return:        A numpy ndarray containing the classification results
         """
-        assert isinstance(self.config, (PredictConfig, EvalConfig, ))
+        assert self.config == PredictConfig or self.config == EvalConfig
         assert self.built
         assert self.trained
 
         return np.array(
             self.model.predict_proba(
                 data,
-                batch_size=100,
-                steps=100,
-                verbose=0
+                verbose=0,
+                batch_size=100
             )
         )

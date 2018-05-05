@@ -19,6 +19,7 @@ limitations under the License.
 from keras.models import Sequential
 
 from keras.layers import Reshape
+from keras.layers import Flatten
 from keras.layers import Conv1D
 from keras.layers import Dropout
 from keras.layers import Input
@@ -29,7 +30,7 @@ from keras.regularizers import L1L2
 from keras.callbacks import ModelCheckpoint
 import numpy as np
 
-from models import Model
+from models.model import Model
 from models.config import *
 
 
@@ -48,6 +49,7 @@ class ConvolutionalNeuralNetwork(Model):
         super(ConvolutionalNeuralNetwork, self).__init__(config)
 
         self.model = Sequential()
+        self.name = 'cnn'
 
     def load_checkpoint(self,
                         path: str) -> None:
@@ -85,68 +87,99 @@ class ConvolutionalNeuralNetwork(Model):
         """
         assert not self.built
 
-        # Defining the layers
-        reshapeLayer = Reshape(
-            (1, input_dim[0]),
-            input_shape=input_dim
+        model = Sequential()
+
+        model.add(Reshape(
+            (1, 23),
+            input_shape=(23,)
+        ))
+
+        model.add(
+            BatchNormalization()
         )
 
-        batchNormLayer1 = BatchNormalization()
-
-        convLayer1 = Conv1D(
+        conv1_layer = Conv1D(
             32,
             kernel_size=2,
-            padding='casual'
-        )
-
-        convLayer2 = Conv1D(
-            64,
-            kernel_size=2,
-            padding='casual'
-        )
-
-        convLayer3 = Conv1D(
-            128,
-            kernel_size=2,
-            padding='casual'
-        )
-
-        dropoutLayer = Dropout(
-            0.2
-        )
-
-        denseLayer = Dense(
-            32,
-            kernel_initializer='uniform',
+            padding='causal',
+            # input_shape=(None, len(feature_vector), 1),
             kernel_regularizer=L1L2(l1=.0, l2=.1),
-            activation='relu'
+            # activation='elu',
         )
 
-        batchNormLayer2 = BatchNormalization()
+        model.add(conv1_layer)
 
-        outputLayer = Dense(
-            2,
-            activation='softmax',
-            kernel_initializer='uniform'
+        # model.add(Dropout(0.2))
+
+        model.add(
+            Conv1D(
+                64,
+                kernel_size=2,
+                padding='causal',
+                # activation='elu',
+                # kernel_regularizer=L1L2(l1=.0, l2=.1)
+            )
         )
 
-        # Adding them to the model
-        self.model.add(reshapeLayer)
-        self.model.add(batchNormLayer1)
-        self.model.add(convLayer1)
-        self.model.add(convLayer2)
-        self.model.add(convLayer3)
-        self.model.add(dropoutLayer)
-        self.model.add(denseLayer)
-        self.model.add(batchNormLayer2)
-        self.model.add(outputLayer)
+        # model.add(Dropout(0.2))
 
-        # Compiling the model
-        self.model.compile(
-            optimizer=Adam(),
-            loss='categorical_crossentropy',
-            metrics=['accuracy']
+        model.add(
+            Conv1D(
+                128,
+                kernel_size=2,
+                padding='causal',
+                # dilation_rate=4,
+                # activation='elu',
+                # kernel_regularizer=L1L2(l1=.0, l2=.1)
+            )
         )
+
+        model.add(Dropout(
+            .2
+        ))
+
+        model.add(Flatten())
+
+        model.add(
+            Dense(
+                128,
+                activation='relu',
+                # input_dim=len(feature_vector),
+                # kernel_regularizer=L1L2(l1=.0, l2=.1)
+            )
+        )
+
+        model.add(BatchNormalization())
+
+        # model.add(Dropout(0.2))
+
+        model.add(
+            Dense(
+                32,
+                activation='relu',
+                # kernel_regularizer=L1L2(l1=.0, l2=.1)
+            )
+        )
+
+        # model.add(Dropout(0.5))
+
+        model.add(
+            Dense(
+                2,
+                #input_dim=len(feature_vector),
+                activation='softmax',
+                # kernel_regularizer=L1L2(l1=.0, l2=.1)
+            )
+        )
+
+        model.compile(
+            optimizer='adam',
+            loss='categorical_crossentropy'
+        )
+
+        self.model = model
+
+        self.built = True
 
     def train(self,
               trainX,
@@ -165,8 +198,10 @@ class ConvolutionalNeuralNetwork(Model):
         :return:                        -
         """
         assert self.built
-        assert isinstance(self.config, (EvalConfig, TrainConfig, ))
-        assert isinstance(self.config, TrainConfig) or not save_checkpoint
+        assert self.config == EvalConfig or self.config == TrainConfig
+        assert self.config == TrainConfig or not save_checkpoint
+
+        print(self.model.layers)
 
         if not save_checkpoint:
             self.model.fit(
@@ -200,12 +235,12 @@ class ConvolutionalNeuralNetwork(Model):
         :param data:   feature matrix for which we do the predictions
         :return:       A numpy ndarray containing the classification results
         """
-        assert isinstance(self.config, (PredictConfig, EvalConfig, ))
+        assert self.config == PredictConfig or self.config == EvalConfig
         assert self.built
         assert self.trained
 
         return np.array(
-            self.model.predict(
+            self.model.predict_classes(
                 data,
                 batch_size=100,
                 steps=100,
@@ -220,7 +255,7 @@ class ConvolutionalNeuralNetwork(Model):
         :param data:    feature matrix for which we do the predictions
         :return:        A numpy ndarray containing the classification results
         """
-        assert isinstance(self.config, (PredictConfig, EvalConfig, ))
+        assert self.config == PredictConfig or self.config == EvalConfig
         assert self.built
         assert self.trained
 
