@@ -24,9 +24,11 @@ from models.mlp import MultilayerPerceptron
 from models.logistic_regression import LogisticRegression
 from models.gat import GraphAttentionNetwork
 
+
 import numpy as np
 import pandas as pd
 import abc
+
 
 class Model(object):
     """
@@ -146,3 +148,5 @@ class Model(object):
                         testYs
                     )
         return results
+
+def get_model():

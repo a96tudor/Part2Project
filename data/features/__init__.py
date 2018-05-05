@@ -18,12 +18,27 @@ limitations under the License.
 """
 from data.neo4J.database_driver import AnotherDatabaseDriver
 from data.features.feature_extractor import FeatureExtractor
-from data.features.constants import SUPPORTED_FILE_FORMATS, FEATURES_ONE_HOT
+from data.features.constants import SUPPORTED_FILE_FORMATS, FEATURES_ONE_HOT, LABELS, ACCEPTED_NODE_TYPES
 from cypher_statements.config import RULES_TO_RUN
 import pandas as pd
+import pickle
 
 import json
-from data.utils import shuffle_dict, dump_json
+from data.utils import shuffle_dict, dump_json, shuffle_list, intersect_two_lists
+
+def search_in_list(id: tuple,
+                   nodes: list) -> list:
+    """
+
+    :param id:              (uuid, timestamp, ) tuple representing the ID of the node we're looking for
+    :param nodes:           The list of nodes to search in
+    :return:                The list of indexes where this node has to be found
+    """
+    result = list()
+    for idx in range(len(nodes)):
+        if id == nodes[idx]['id']:
+            result.append(idx)
+    return result
 
 
 def get_dataset(driver: AnotherDatabaseDriver,
@@ -52,32 +67,35 @@ def get_dataset(driver: AnotherDatabaseDriver,
 
     features = feature_extractor.get_feature_matrix(include_NONE=include_NONE)
 
-    print(features)
-
     if not for_gat:
         if not shuffle:
             return features
         else:
-            features = shuffle_dict(features)
+            features = shuffle_list(features)
             return features
 
     neighs = feature_extractor.get_neighbours()
 
-    extracted = feature_extractor
+    extracted = features
 
     for node in features:
-        if len(neighs[node]) == 0:
-            features[node]['neighs'][0] = features[node]['self']
+        neighs_idx = search_in_list(node['id'], neighs)
+        if len(neighs_idx) == 0:
+            node['neighs'] = node['self']
         else:
             to_extract = list()
-            features[node]['neighs'] = list()
-            for neigh in neighs[node]:
-                tp = (neigh['uuid'], neigh['timestamp'], )
-                if tp in extracted:
-                    if extracted[tp]['self'] is not None:
-                        features[node]['neighs'].append(extracted[tp]['self'])
-                else:
-                    to_extract.append(neigh)
+            node['neighs'] = list()
+            for idx in neighs_idx:
+                for neigh in neighs[idx]['neighs']:
+                    tp = (neigh['uuid'], neigh['timestamp'], )
+                    extracted_idx = search_in_list(tp, extracted)
+                    if len(extracted_idx) != 0 and extracted[extracted_idx[0]]['self'] is not None:
+                        node['neighs'].append(extracted[extracted_idx[0]]['self'])
+                    elif neigh not in to_extract:
+                        to_extract.append(neigh)
+
+            if len(to_extract) == 0:
+                continue
 
             fe = FeatureExtractor(
                 nodes=to_extract,
@@ -87,15 +105,18 @@ def get_dataset(driver: AnotherDatabaseDriver,
 
             new_nodes = fe.get_feature_matrix(include_NONE=False)
 
+            if len(new_nodes) == 0:
+                new_nodes.append(node)
+
             for neigh in new_nodes:
-                features[node]['neighs'].append(new_nodes[neigh]['self'])
+                node['neighs'].append(neigh['self'])
 
             extracted = extracted + new_nodes
 
     if not shuffle:
         return features
     else:
-        features = shuffle_dict(features)
+        features = shuffle_list(features)
         return features
 
 
@@ -164,7 +185,7 @@ def build_training_set(host: str,
             "where not 'Machine' in labels(x) and not 'Pipe' in labels(x) and not 'Meta' in labels(x) and labels(x) <> ['Global']" \
             "return x.uuid as uuid, x.timestamp as timestamp"
 
-    full_results = dict()
+    full_results = list()
 
     all_nodes = driver.execute_query(query)
     nodes_cnt = len(all_nodes)
@@ -199,12 +220,12 @@ def build_training_set(host: str,
             show_nodes = show_nodes + result
 
             for node in features:
-                features[node]['SHOW'] = 1
-                features[node]['HIDE'] = 0
+                node['SHOW'] = 1
+                node['HIDE'] = 0
 
             print("     Added " + str(len(features)) + " new entries!")
 
-            full_results.update(features)
+            full_results += features
 
     # Setting the HIDE nodes limit so that the training set
     # roughly follows the 30-70 distribution of SHOW/HIDE nodes
@@ -226,11 +247,11 @@ def build_training_set(host: str,
     )
 
     for node in features:
-        features[node]['SHOW'] = 0
-        features[node]['HIDE'] = 1
+        node['SHOW'] = 0
+        node['HIDE'] = 1
 
-    full_results.update(features)
-    full_results = shuffle_dict(full_results)
+    full_results += features
+    full_results = shuffle_list(full_results)
 
     if not save_to_disk:
         return full_results
@@ -240,15 +261,18 @@ def build_training_set(host: str,
 
         dump_json(full_results, file_path)
     else:
-        df = build_df_from_dict(full_results)
+        df = build_df_from_list(full_results)
         file_path = "%s/%s" % (save_in_dir, filename)
 
-        df.to_csv(file_path, index=True)
+        if save_in_format == 'df':
+            df.to_csv(file_path, index=True)
+        elif save_in_format == 'bin':
+            save_as_binary(path=save_in_dir, data=df)
 
     return full_results
 
 
-def build_df_from_dict(data: dict):
+def build_df_from_list(data: list):
     """
 
     :param data:        Dictionary we're building the DataFrame from
@@ -257,9 +281,9 @@ def build_df_from_dict(data: dict):
     df = pd.DataFrame(columns=FEATURES_ONE_HOT + ['SHOW', 'HIDE'])
 
     for node in data:
-        new_entry = data[node]['self']
-        new_entry['SHOW'] = data[node]['SHOW']
-        new_entry['HIDE'] = data[node]['HIDE']
+        new_entry = node['self']
+        new_entry['SHOW'] = node['SHOW']
+        new_entry['HIDE'] = node['HIDE']
 
         new_df = pd.DataFrame(new_entry, index=[0])
 
@@ -267,3 +291,78 @@ def build_df_from_dict(data: dict):
 
     return df
 
+
+def save_as_binary(data: pd.DataFrame,
+                   path: str) -> None:
+    """
+
+    :param data:
+    :param path:
+    :return:
+    """
+
+    def save(file, data):
+        with open(file, 'wb') as fout:
+            pickle.dump(data, fout)
+
+    Xs = data[FEATURES_ONE_HOT]
+    Ys = data[LABELS]
+
+    fileXs = "%s/Xs.pkl" % path
+    fileYs = "%s/Ys.pkl" % path
+
+    save(file=fileXs, data=Xs)
+    save(file=fileYs, data=Ys)
+
+
+def get_node_type(driver: AnotherDatabaseDriver,
+                  uuid: str,
+                  timestamp: int) -> str:
+    """
+
+    :param driver:          The Neo4J driver used when running the query
+    :param uuid:            The unique node ID used to identify the node
+    :param timestamp:       The timestamp of the node in question
+
+    :return:                The node type, as a string
+    """
+
+    query = "match(n {uuid: '%s', timestamp: %d}) " \
+            "return labels(n) limit 1" % (uuid, timestamp)
+
+    labels = driver.execute_query(query)
+
+    if len(labels) == 0:
+        return 'N/A'
+
+    labels = labels[0]['labels(n)']
+
+    intersect = intersect_two_lists(l1=labels, l2=ACCEPTED_NODE_TYPES)
+
+    if len(intersect) != 1:
+        return 'N/A'
+
+    return intersect[0]
+
+
+def get_closest_process(driver: AnotherDatabaseDriver,
+                        uuid: str,
+                        timestamp: int) -> dict:
+    """
+            Method that returns the closest Process node connected to a given node
+
+    :param driver:              The Neo4J driver used when running the query
+    :param uuid:                The unique node ID used to identify the node
+    :param timestamp:           The timestamp of the node in question
+    :return:                    A dictionary representing the uuid and timestamp of the Process
+    """
+    query = "match(n {uuid: '%s', timestamp: %d}) -- (m:Process)" \
+            "return m.uuid as uuid, m.timestamp as timestamp " \
+                "order by abs(n.timestamp - m.timestamp) limit 1" % (uuid, timestamp)
+
+    result = driver.execute_query(query)
+
+    if len(result) == 0:
+        return dict()
+
+    return result[0]
