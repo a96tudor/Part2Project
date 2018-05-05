@@ -1,5 +1,5 @@
 """
-Part2Project -- logistic_regression.py
+Part2Project -- cnn.py.py
 
 Copyright Apr 2018 [Tudor Mihai Avram]
 
@@ -16,10 +16,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-
 from keras.models import Sequential
+
+from keras.layers import Reshape
+from keras.layers import Conv1D
+from keras.layers import Dropout
+from keras.layers import Input
 from keras.layers import Dense
-from keras.optimizers import SGD
+from keras.optimizers import Adam
 from keras.layers import BatchNormalization
 from keras.regularizers import L1L2
 from keras.callbacks import ModelCheckpoint
@@ -29,29 +33,31 @@ from models import Model
 from models.config import *
 
 
-class LogisticRegression(Model):
+class ConvolutionalNeuralNetwork(Model):
     """
-        Class representing Logistic Regression model
+        Class representing the CNN implemented as part of the project
     """
+
     def __init__(self,
-                 config: ModelConfig,
-                 **kwargs):
+                 config: ModelConfig):
         """
             CONSTRUCTOR
 
-            :param config:  the configuration of the model
+        :param config:      Configuration used when running the model
         """
-        super(LogisticRegression, self).__init__(config)
+        super(ConvolutionalNeuralNetwork, self).__init__(config)
 
         self.model = Sequential()
 
     def load_checkpoint(self,
                         path: str) -> None:
         """
+            Method used to load a pre-trained checkpoint
 
-        :param path:        Path to load the checkpoint from
+        :param path:        Path to the checkpoint
         :return:            -
         """
+        assert isinstance(self.config, PredictConfig)
         assert self.built
 
         self.model.load_weights(
@@ -63,8 +69,7 @@ class LogisticRegression(Model):
     def save_checkpoint(self,
                         path: str) -> None:
         """
-            Not used in this case.
-            The checkpoint saving is done using a callback while training.
+            Method not used in this class
         """
         pass
 
@@ -72,38 +77,76 @@ class LogisticRegression(Model):
               input_dim: tuple,
               **kwargs) -> None:
         """
-            Method used to setup the Keras machine learning model
 
-        :param input_dim:        Dimensions of the input vectors
-        :param kwargs:           Other potential arguments. Not applicable here.
-        :return:                 -
+        :param input_dim:       The shape of the input
+        :param kwargs:          Other arguments. Not used here
+
+        :return:                -
         """
+        assert not self.built
 
-        # Defining layers
-        batchNormLayer = BatchNormalization(
+        # Defining the layers
+        reshapeLayer = Reshape(
+            (1, input_dim[0]),
             input_shape=input_dim
         )
 
+        batchNormLayer1 = BatchNormalization()
+
+        convLayer1 = Conv1D(
+            32,
+            kernel_size=2,
+            padding='casual'
+        )
+
+        convLayer2 = Conv1D(
+            64,
+            kernel_size=2,
+            padding='casual'
+        )
+
+        convLayer3 = Conv1D(
+            128,
+            kernel_size=2,
+            padding='casual'
+        )
+
+        dropoutLayer = Dropout(
+            0.2
+        )
+
         denseLayer = Dense(
+            32,
+            kernel_initializer='uniform',
+            kernel_regularizer=L1L2(l1=.0, l2=.1),
+            activation='relu'
+        )
+
+        batchNormLayer2 = BatchNormalization()
+
+        outputLayer = Dense(
             2,
             activation='softmax',
-            kernel_regularizer=L1L2(l1=.0, l2=.1),
             kernel_initializer='uniform'
         )
 
-        # Adding layers
-        self.model.add(batchNormLayer)
+        # Adding them to the model
+        self.model.add(reshapeLayer)
+        self.model.add(batchNormLayer1)
+        self.model.add(convLayer1)
+        self.model.add(convLayer2)
+        self.model.add(convLayer3)
+        self.model.add(dropoutLayer)
         self.model.add(denseLayer)
+        self.model.add(batchNormLayer2)
+        self.model.add(outputLayer)
 
-        # Compiling model
-
+        # Compiling the model
         self.model.compile(
+            optimizer=Adam(),
             loss='categorical_crossentropy',
-            optimizer=SGD(lr=0.001),
             metrics=['accuracy']
         )
-
-        self.built = True
 
     def train(self,
               trainX,
@@ -112,18 +155,17 @@ class LogisticRegression(Model):
               validateY,
               save_checkpoint: bool = False) -> None:
         """
-                Method used to train the model
 
-        :param trainX:              np.ndarray containing the training set feature vectors
-        :param trainY:              np.ndarray containing the training set labels
-        :param validateX:           np.ndarray containing the validation set feature vectors
-        :param validateY:           np.ndarray containing the validation set labels
-        :param save_checkpoint:     Whether to save the model checkpoint or not
+        :param trainX:                  The training feature vectors
+        :param trainY:                  The training labels
+        :param validateX:               The validation feature vectors
+        :param validateY:               The validation labels
+        :param save_checkpoint:         Whether to save the trained checkpoint to disk or not
 
-        :return:                    -
+        :return:                        -
         """
-
-        assert isinstance(self.config, (TrainConfig, EvalConfig, ))
+        assert self.built
+        assert isinstance(self.config, (EvalConfig, TrainConfig, ))
         assert isinstance(self.config, TrainConfig) or not save_checkpoint
 
         if not save_checkpoint:
@@ -135,10 +177,8 @@ class LogisticRegression(Model):
                 epochs=1000
             )
         else:
-            # We want to save the checkpoints.
-            # Thus, adding a callback that handles that as well
-            path = self.config.CHECKPOINTS_PATH + "/logistic_regression.hdf5"
-            checkpointer = ModelCheckpoint(
+            path = self.config.CHECKPOINTS_PATH + "/cnn.hdf5"
+            callback = ModelCheckpoint(
                 filepath=path,
                 save_best_only=True
             )
@@ -147,7 +187,8 @@ class LogisticRegression(Model):
                 y=trainY,
                 validation_data=(validateX, validateY),
                 batch_size=100,
-                epochs=1000
+                epochs=1000,
+                callbacks=[callback]
             )
 
         self.trained = True

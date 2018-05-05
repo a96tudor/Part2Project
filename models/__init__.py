@@ -18,6 +18,11 @@ limitations under the License.
 """
 from data.utils import read_csv, split_dataframe
 from models.config import *
+from models.cnn import ConvolutionalNeuralNetwork
+from models.pnn import ProbabilisticNeuralNetwork
+from models.mlp import MultilayerPerceptron
+from models.logistic_regression import LogisticRegression
+from models.gat import GraphAttentionNetwork
 
 
 import numpy as np
@@ -39,6 +44,12 @@ class Model(object):
         """
         self.config = config
         self.built = False
+        self.trained = False
+
+    @abc.abstractclassmethod
+    def load_checkpoint(self,
+                        path: str) -> None:
+        pass
 
     @abc.abstractclassmethod
     def save_checkpoint(self,
