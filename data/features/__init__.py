@@ -343,3 +343,26 @@ def get_node_type(driver: AnotherDatabaseDriver,
         return 'N/A'
 
     return intersect[0]
+
+
+def get_closest_process(driver: AnotherDatabaseDriver,
+                        uuid: str,
+                        timestamp: int) -> dict:
+    """
+            Method that returns the closest Process node connected to a given node
+
+    :param driver:              The Neo4J driver used when running the query
+    :param uuid:                The unique node ID used to identify the node
+    :param timestamp:           The timestamp of the node in question
+    :return:                    A dictionary representing the uuid and timestamp of the Process
+    """
+    query = "match(n {uuid: '%s', timestamp: %d}) -- (m:Process)" \
+            "return m.uuid as uuid, m.timestamp as timestamp " \
+                "order by abs(n.timestamp - m.timestamp) limit 1" % (uuid, timestamp)
+
+    result = driver.execute_query(query)
+
+    if len(result) == 0:
+        return dict()
+
+    return result[0]

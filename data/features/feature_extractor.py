@@ -51,7 +51,7 @@ class FeatureExtractor(object):
 
         self._nodes = nodes
         self._dbDriver = driver
-        self._verbose = True
+        self._verbose = verbose
 
         if self._verbose:
             print(LINE_DELIMITER)
