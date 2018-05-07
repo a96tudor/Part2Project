@@ -59,7 +59,7 @@ class ConvolutionalNeuralNetwork(Model):
         :param path:        Path to the checkpoint
         :return:            -
         """
-        assert isinstance(self.config, PredictConfig)
+        assert self.config == PredictConfig
         assert self.built
 
         self.model.load_weights(
@@ -201,15 +201,14 @@ class ConvolutionalNeuralNetwork(Model):
         assert self.config == EvalConfig or self.config == TrainConfig
         assert self.config == TrainConfig or not save_checkpoint
 
-        print(self.model.layers)
-
         if not save_checkpoint:
             self.model.fit(
                 x=trainX,
                 y=trainY,
                 validation_data=(validateX, validateY),
                 batch_size=100,
-                epochs=1000
+                epochs=1000,
+                verbose=0
             )
         else:
             path = self.config.CHECKPOINTS_PATH + "/cnn.hdf5"
@@ -223,7 +222,8 @@ class ConvolutionalNeuralNetwork(Model):
                 validation_data=(validateX, validateY),
                 batch_size=100,
                 epochs=1000,
-                callbacks=[callback]
+                callbacks=[callback],
+                verbose=0
             )
 
         self.trained = True
@@ -243,7 +243,6 @@ class ConvolutionalNeuralNetwork(Model):
             self.model.predict_classes(
                 data,
                 batch_size=100,
-                steps=100,
                 verbose=0
             )
         )
@@ -263,7 +262,6 @@ class ConvolutionalNeuralNetwork(Model):
             self.model.predict_proba(
                 data,
                 batch_size=100,
-                steps=100,
                 verbose=0
             )
         )

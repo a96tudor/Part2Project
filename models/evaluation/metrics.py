@@ -37,7 +37,7 @@ def get_confusion_matrix(y_true: np.ndarray,
 
     :return:            The corresponding values
     """
-    
+
     tn, fp, fn, tp = confusion_matrix(y_pred=y_pred, y_true=y_true).ravel()
 
     return [tp, tn, fp, fn]

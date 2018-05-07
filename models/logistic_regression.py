@@ -149,7 +149,8 @@ class LogisticRegression(Model):
                 validation_data=(validateX, validateY),
                 batch_size=100,
                 epochs=1000,
-                verbose=0
+                verbose=0,
+                callbacks=[checkpointer]
             )
 
         self.trained = True
@@ -180,7 +181,7 @@ class LogisticRegression(Model):
         :param data:    feature matrix for which we do the predictions
         :return:        A numpy ndarray containing the classification results
         """
-        assert isinstance(self.config, (PredictConfig, EvalConfig, ))
+        assert self.config in (PredictConfig, EvalConfig, )
         assert self.built
         assert self.trained
 

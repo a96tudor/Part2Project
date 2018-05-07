@@ -55,7 +55,7 @@ class MultilayerPerceptron(Model):
         :param path:        Path to the checkpoint
         :return:            -
         """
-        assert isinstance(self.config, PredictConfig)
+        assert self.config == PredictConfig
         assert self.built
 
         self.model.load_weights(
@@ -174,10 +174,12 @@ class MultilayerPerceptron(Model):
             )
         else:
             path = self.config.CHECKPOINTS_PATH + "/mlp.hdf5"
+
             callback = ModelCheckpoint(
                 filepath=path,
                 save_best_only=True
             )
+
             self.model.fit(
                 x=trainX,
                 y=trainY,

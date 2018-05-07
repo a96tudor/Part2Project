@@ -301,3 +301,160 @@ def get_new_filename_in_dir(dir_path: str,
     file_path = "%s/%d.%s" % (dir_path, next_idx, format)
 
     return file_path
+
+
+def split_list(data: list,
+               test_section: int,
+               percentile: float = .90,
+               purpose: str = 'test') -> (list, list):
+    """
+        Function for splitting a list, used in the
+        evauation phase of the machine learning models
+
+    :param data:            The initial list to split
+    :param test_section:    Which section of the list will act as the test/ validation part
+    :param percentile:      How many of the elements are in the training set
+    :param purpose:         If it's for validation or testing. Default 'test'
+
+    :return:                The 2 lists resulting from the splitting
+    """
+
+    assert purpose in ['test', 'validation']
+    assert test_section <= int(1.0/(1-percentile))
+
+    test_left = int((1 - percentile) * (test_section - 1) * len(data))
+    test_right = min(int((1 - percentile) * test_section * len(data) - 1), len(data) - 1)
+
+    print()
+    print("Starting new split:")
+    print("   list length: %d" % len(data))
+    print("   %s section: %d" % (purpose, test_section))
+    print("   %s interval: %d - %d" % (purpose, test_left, test_right))
+    print()
+
+    test_list = data[test_left+1:test_right+2]
+    train_list = data[:test_left+1] + data[test_right+2:]
+
+    return train_list, test_list
+
+def append_dict_to_df(new_data: dict,
+                      df: pd.DataFrame) -> pd.DataFrame:
+    """
+        Method that takes a dictionary and appends it
+        as a new line to a dataframe
+
+    :param new_data:        The dictionary to append
+    :param df:              The dataframe to append to
+    :return:                The resulting dataframe
+    """
+
+    new_df = pd.DataFrame(
+        new_data,
+        index=[0]
+    )
+
+    result = pd.concat([df, new_df], axis=0, ignore_index=True)
+
+    return result
+
+
+def process_list(data: list,
+                 labels: list,
+                 features: list) -> (tuple, np.ndarray):
+    """
+        Function that gets a list in the format for GAT
+        and returns:
+
+                1. A tuple containing two elements (X, N), where:
+                    a) X = the feature matrix for the nodes in the list
+                         - np.ndarray with shape (len(data), 23)
+
+                    b) N = 3D np.ndarray, with dimension: (len(data), None, 23)
+                        it contains the neighbourhood data for the input vectors
+
+                2. An np.ndaray having shape (len(data), 2). It represents the
+                labels of the feature vectors
+
+    :param data:            The input list of nodes, with their features
+    :param labels:          The label names used when building the np.ndarray
+    :param features:        The feature names used when building the feature
+                            matrices
+
+    :return:                Listed above
+    """
+
+    assert len(data) > 0
+
+    X_df = pd.DataFrame(
+        columns=features
+    )
+
+    Y_df = pd.DataFrame(
+        columns=labels
+    )
+
+    N_list = list()
+
+    print("Starting to process the list. %d nodes to process." % len(data))
+
+    cnt_done = 0
+
+    N = np.zeros(
+        shape=(len(data), 20, len(features))
+    )
+
+    for idx in range(len(data)):
+        # Adding node to feature matrix
+        node = data[idx]
+        self = node['self']
+        X_df = append_dict_to_df(new_data=self, df=X_df)
+
+        # Now moving onto neighbours
+        neighs_df = pd.DataFrame(
+            columns=features
+        )
+        try:
+            for neigh in node['neighs'][:20]:
+                neighs_df = append_dict_to_df(new_data=neigh, df=neighs_df)
+        except KeyError:
+            print(node)
+
+        N_list.append(
+            neighs_df.as_matrix(columns=features)
+        )
+
+        N[idx, :len(neighs_df), :] = neighs_df.as_matrix(columns=features)
+
+        # And now the labels
+        Y_df = append_dict_to_df(
+            new_data={
+                'SHOW': node['SHOW'],
+                'HIDE': node['HIDE']
+            },
+            df=Y_df
+        )
+
+        cnt_done += 1
+        #print("%d/ %d Done!" % (cnt_done, len(data)))
+
+    print("Done!")
+
+    X = X_df.as_matrix(columns=features)
+    Y = Y_df.as_matrix(columns=labels)
+    #N = np.array(N_list)
+
+    return X, N, Y
+
+
+def load_json(path: str):
+    """
+
+    :param path:    The path to load the data from
+
+    :return:        The resulting data
+    """
+
+    with open(path, 'rb') as f:
+        data = json.load(f)
+
+    return data
