@@ -59,7 +59,7 @@ SELECTS = {
 
     'node-cache-status': 'SELECT n.validUntil '
                             'FROM nodes AS n '
-                            'WHERE n.uuid=%s AND n.timestmp=%d',
+                            'WHERE n.uuid=%s AND n.timemstmp=%s',
 
     'jobs-by-status': 'SELECT count(*) as count '
                         'FROM jobs '
@@ -77,7 +77,7 @@ SELECTS = {
 
     'node-classification-results': 'SELECT nodes.showLikelihood, nodes.hideLikelihood, nodes.recommended '
                                         'FROM nodes '
-                                   'WHERE nodes.uuid=%s AND nodes.timestmp=%d',
+                                   'WHERE nodes.uuid=%s AND nodes.timemstmp=%s',
 
     'running-jobs': 'SELECT jobs.jobID '
                         'FROM jobs '
@@ -89,7 +89,7 @@ SELECTS = {
 
     'nodeID': 'SELECT nodes.id '
               'FROM nodes '
-              'WHERE nodes.uuid=%s AND nodes.timesmp=%s'
+              'WHERE nodes.uuid=%s AND nodes.timemstmp=%s'
 }
 
 INSERTS = {
@@ -97,11 +97,11 @@ INSERTS = {
                     'VALUES (%s, %s, now())',
 
     'new-node': 'INSERT '
-                'INTO nodes(uuid, timestmp, showLikelihood, hideLikelihood, recommended, classifiedBy, validUntil) '
-                    'VALUES(%s, %d, %f, %f, %s, %s, )',
+                'INTO nodes(uuid, timemstmp, showlikelihood, hidelikelihood, recommended, classifiedby) '
+                    'VALUES(%s, %s, %s, %s, %s, %s)',
 
     'node-to-job-rel': 'INSERT '
-                       'INTO nodestojobs(jobID, nodeID) '
+                       'INTO jobstonodes(jobid, nodeid) '
                             'VALUES(%s, %s)'
 }
 

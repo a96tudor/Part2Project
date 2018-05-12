@@ -11,9 +11,10 @@ class Config(object):
     SECRET = os.getenv('SECRET')
 
     CACHE_DATABASE_HOST = 'http://127.0.0.1'
-    CACHE_DATABASE_PORT = 1234
-    CACHE_DATABASE_USER = 'cadets'
-    CACHE_DATABASE_PASS = 'pass'
+    CACHE_DATABASE_PORT = 5432
+    CACHE_DATABASE_USER = 'tma33'
+    CACHE_DATABASE_PASS = 'opus'
+    CACHE_DATABASE_NAME = 'server-cache'
 
     FEATURES_DATABASE_HOST = 'bolt://127.0.0.1'
     FEATURES_DATABASE_PORT = 7687

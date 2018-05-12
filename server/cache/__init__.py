@@ -85,7 +85,7 @@ class CacheHandler(object):
         query = SELECTS['nodeID']
 
         try:
-            results = self.postgresDriver.execute_SELECT(query, (uuid, timestamp, ))
+            results = self.postgresDriver.execute_SELECT(query, uuid, timestamp)
 
             if len(results) == 0:
                 return None
@@ -131,7 +131,7 @@ class CacheHandler(object):
     def add_new_job(self,
                     jobID: str,
                     startedAt=None,
-                    status:str='WAITING'):
+                    status: str='WAITING'):
         """
 
         :param jobID:               The ID of the job we're adding
@@ -144,18 +144,16 @@ class CacheHandler(object):
         """
         assert(status in ACCEPTED_JOB_STATUS)
 
-        try:
-            query = INSERTS['new-job']
-            if startedAt is None:
-                startedAt = dt.now()
 
-            self.postgresDriver.execute_INSERT(
-                query,
-                (jobID, startedAt, status, )
-            )
-            return True
-        except:
-            return False
+        query = INSERTS['new-job']
+        if startedAt is None:
+            startedAt = dt.now()
+
+        self.postgresDriver.execute_INSERT(
+            query,
+            jobID, status
+        )
+        return True
 
     def update_job_status(self,
                           jobID: str,
@@ -216,12 +214,11 @@ class CacheHandler(object):
                             None - if not successful
         """
         query = SELECTS['job-status']
-        try:
-            status = self.postgresDriver.execute_SELECT(query, jobID)[0][0]
 
-            return status
-        except:
-            return None
+        status = self.postgresDriver.execute_SELECT(query, jobID)
+        print(status)
+
+        return status[0][0]
 
     def add_node_results(self,
                      jobID: str,
@@ -230,7 +227,7 @@ class CacheHandler(object):
                      showProb: float,
                      hideProb: float,
                      recommended: str,
-                     ttl: int,
+                     ttl: int=None,
                      override:bool=True):
         """
 
@@ -290,4 +287,70 @@ class CacheHandler(object):
         # If the node wasn't already in the database,
         # then we first need to add it as a new entry
 
-        # TODO
+        query = INSERTS['new-node']
+
+        self.postgresDriver.execute_INSERT(
+            query,
+            uuid, timestamp, showProb, hideProb, recommended, 'test'
+        )
+
+        # Now getting the node ID
+
+        nodeInnerID = self._get_node_id(uuid=uuid, timestamp=timestamp)
+
+        query = INSERTS['node-to-job-rel']
+
+        #print(jobInnerID, nodeInnerID)
+
+        self.postgresDriver.execute_INSERT(
+            query,
+            jobInnerID, nodeInnerID
+        )
+
+        return True
+
+    def cache_valid(self,
+                   uuid: str,
+                   timestamp: int):
+        """
+            Method that checks if the cache for one node is still valid or not.
+
+        :param uuid:            The uuid of the node in question.
+        :param timestamp:       The timestamp of the node in question.
+        :return:                True - if the cache is still valid
+                                False - otherwise
+        """
+
+        query = SELECTS['node-cache-status']
+
+        status = self.postgresDriver.execute_SELECT(
+            query,
+            uuid, timestamp
+        )
+
+        if len(status) == 0:
+            # The node is not in the database
+            return False
+        else:
+            status = status[0][0]
+
+            return status is None
+
+    def get_node_cache_entry(self,
+                             uuid: str,
+                             timestamp: int):
+        """
+
+        :param uuid:
+        :param timestamp:
+        :return:
+        """
+
+        query = SELECTS['node-classification-results']
+
+        results = self.postgresDriver.execute_SELECT(
+            query,
+            uuid, timestamp
+        )
+
+        return results

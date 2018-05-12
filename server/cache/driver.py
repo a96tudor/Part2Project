@@ -143,7 +143,7 @@ class PostgresDriver(object):
         results = None
 
         with self.conn.cursor() as cur:
-            cur.execute_query(query, *args)
+            cur.execute(query, args)
             results = cur.fetchall()
             cur.close()
 
@@ -160,7 +160,7 @@ class PostgresDriver(object):
         :return:           -
         """
         with self.conn.cursor() as cur:
-            cur.execute(query, *args)
+            cur.execute(query, args)
             self.conn.commit()
             cur.close()
 
@@ -174,7 +174,7 @@ class PostgresDriver(object):
         :return:
         """
         with self.conn.cursor() as cur:
-            cur.execute_query(query, *args)
+            cur.execute(query, *args)
             self.conn.commit()
             cur.close()
 
