@@ -32,7 +32,7 @@ def get_diff(l1, l2):
     return list(set(l1) - set(l2))
 
 
-def read_csv(path, label_cols, drop_cols=None, normalize=True):
+def read_csv(path, label_cols, drop_cols=None, normalize=True, shuffle=True):
     """
 
     :param path:            The path where we want to read the data from
@@ -45,7 +45,8 @@ def read_csv(path, label_cols, drop_cols=None, normalize=True):
 
     df = pd.read_csv(path)
 
-    df = shuffle_df(df)
+    if shuffle:
+        df = shuffle_df(df)
 
     if drop_cols is not None:
         df = df.drop(columns=drop_cols)
@@ -156,7 +157,7 @@ def split_dataframe(df, label_cols, test_part, percentile=0.90):
     """
     print()
     print("Starting new split: \n    Dataframe length: %d \n    Test section: %d" % (len(df), test_part))
-    test_left = int((1-percentile)*(test_part-1)*len(df))
+    test_left = int((1-percentile)*(test_part - 1)*len(df))
     test_right = min(int((1-percentile)*test_part*len(df) - 1), len(df) - 1)
 
     print("Test interval: %d - %d" % (test_left, test_right))

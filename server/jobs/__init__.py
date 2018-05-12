@@ -18,9 +18,10 @@ limitations under the License.
 """
 from models.model import Model
 from data.features.feature_extractor import FeatureExtractor
+from data.neo4J.database_driver import AnotherDatabaseDriver
 from server.cache import CacheHandler
-import datetime.datetime as dt
-import random
+from datetime import datetime as dt
+from numpy import random
 import base64
 from server import utils
 
@@ -34,7 +35,7 @@ class RequestJob(object):
                  nodes: list,
                  model: Model,
                  cache_handler: CacheHandler,
-                 feature_extractor: FeatureExtractor,
+                 driver: AnotherDatabaseDriver,
                  jobID: str,
                  ttl: int,
                  batch_size: int):
@@ -50,7 +51,7 @@ class RequestJob(object):
         self.nodes = nodes
         self.model = model
         self.cacheHandler = cache_handler
-        self.featureExtractor = feature_extractor
+        self.neo4jDriver = driver
         self.jobID = jobID
         self.ttl = ttl
         self.batchSize = batch_size
@@ -62,7 +63,20 @@ class RequestJob(object):
         :return:    -
         """
         self.status = 'RUNNING'
-        return None
+        self.cacheHandler.update_job_status(
+            self.jobID,
+            self.status
+        )
+
+        self.featureExtractor = FeatureExtractor(
+            nodes=self.nodes,
+            verbose=True,
+            driver=self.neo4jDriver
+        )
+
+        feature_vectors = self.featureExtractor.get_feature_matrix()
+
+
 
 
 class JobsHandler(object):
@@ -100,15 +114,10 @@ class JobsHandler(object):
         :param nodesCount:      Number of nodes in the job
         :return:                The generated jobID
         """
-        date = str(dt.now())
-        random_digits = random.randint(10000, 99999)
+        current_date = str(dt.now()).replace(' ', '').replace('-', '').replace('.', '').replace(':', '')
+        rnd_seq = ''.join([str(x) for x in random.choice(9, 5)])
 
-        raw_string = "%s%d%d" % (date, nodesCount, random_digits)
-
-        raw_string.replace(" ", "")
-        raw_string.replace("-", "")
-        raw_string.replace(":", "")
-        raw_string.replace(".", "")
+        raw_string = "%s%s" % (current_date, rnd_seq)
 
         shuffled = "".join(random.sample(raw_string, len(raw_string)))
 

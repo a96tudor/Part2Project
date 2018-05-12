@@ -1,0 +1,12 @@
+[
+  "tests/test_postgresDriver.py::TestPostgresDriver::test__execute_query",
+  "tests/test_postgresDriver.py::TestPostgresDriver::test__get_new_connection",
+  "tests/test_postgresDriver.py::TestPostgresDriver::test_close",
+  "tests/test_postgresDriver.py::TestPostgresDriver::test_execute_INSERT",
+  "tests/test_postgresDriver.py::TestPostgresDriver::test_execute_SELECT",
+  "tests/test_postgresDriver.py::TestPostgresDriver::test_execute_UPDATE",
+  "tests/test_postgresDriver.py::TestPostgresDriver::test_init",
+  "tests/test_postgresDriver.py::TestPostgresDriver::test_renew_connection",
+  "tests/test_postgresDriver.py::TestPostgresDriver::test_reset_connection",
+  "tests/test_postgresDriver.py::TestPostgresDriver::test_setup_database"
+]
