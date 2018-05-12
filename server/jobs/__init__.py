@@ -18,6 +18,7 @@ limitations under the License.
 """
 from models.model import Model
 from data.features.feature_extractor import FeatureExtractor
+from data.neo4J.database_driver import AnotherDatabaseDriver
 from server.cache import CacheHandler
 from datetime import datetime as dt
 from numpy import random
@@ -34,7 +35,7 @@ class RequestJob(object):
                  nodes: list,
                  model: Model,
                  cache_handler: CacheHandler,
-                 feature_extractor: FeatureExtractor,
+                 driver: AnotherDatabaseDriver,
                  jobID: str,
                  ttl: int,
                  batch_size: int):
@@ -50,7 +51,7 @@ class RequestJob(object):
         self.nodes = nodes
         self.model = model
         self.cacheHandler = cache_handler
-        self.featureExtractor = feature_extractor
+        self.neo4jDriver = driver
         self.jobID = jobID
         self.ttl = ttl
         self.batchSize = batch_size
@@ -62,7 +63,20 @@ class RequestJob(object):
         :return:    -
         """
         self.status = 'RUNNING'
-        return None
+        self.cacheHandler.update_job_status(
+            self.jobID,
+            self.status
+        )
+
+        self.featureExtractor = FeatureExtractor(
+            nodes=self.nodes,
+            verbose=True,
+            driver=self.neo4jDriver
+        )
+
+        feature_vectors = self.featureExtractor.get_feature_matrix()
+
+
 
 
 class JobsHandler(object):
