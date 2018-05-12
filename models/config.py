@@ -17,7 +17,7 @@ limitations under the License.
 
 """
 from models.evaluation import metrics
-from data.features.constants import FEATURES_ONE_HOT
+from data.features import constants
 
 
 class ModelConfig(object):
@@ -25,11 +25,9 @@ class ModelConfig(object):
         'Mother' class for model configuration
     """
     CHECKPOINTS_PATH = "models/checkpoints/"
-    LABELS = [
-        'SHOW',
-        'HIDE'
-    ]
-    FEATURES = FEATURES_ONE_HOT
+
+    LABELS = constants.LABELS
+    FEATURES = constants.FEATURES_ONE_HOT
 
 
 class TrainConfig(ModelConfig):

@@ -1,6 +1,5 @@
 from data.features import constants as cnst
 from data.neo4J.database_driver import DatabaseDriver, AnotherDatabaseDriver
-from data.training.rules_handler import RulesHandler
 import pandas as pd, numpy as np
 from data.features.feature_extractor import FeatureExtractor
 
