@@ -17,7 +17,8 @@ limitations under the License.
 
 """
 from models.evaluation import metrics
-from data.features import constants
+
+from data.features.constants import FEATURES_ONE_HOT, LABELS
 
 
 class ModelConfig(object):
@@ -26,8 +27,13 @@ class ModelConfig(object):
     """
     CHECKPOINTS_PATH = "models/checkpoints/"
 
-    LABELS = constants.LABELS
-    FEATURES = constants.FEATURES_ONE_HOT
+
+    LABELS = LABELS
+
+    FEATURES = FEATURES_ONE_HOT
+
+    INPUT_DIM = (23, )
+    INPUT_DIM_ATTN = (23, None, )
 
 
 class TrainConfig(ModelConfig):
@@ -39,26 +45,21 @@ class TrainConfig(ModelConfig):
     NORMALIZE = True  # We want to normalize the data first.
 
 
-
 class EvalConfig(ModelConfig):
     """
         Configuration class for the evaluation mode
     """
     DATA_PATH = 'data/training/training-set.csv'
-    SHUFFLE = True  # We want to shuffle the data first to get more accurate results
-    NORMALIZE = True  # We want to normalize the data first
+
+    SHUFFLE = False  # We want to shuffle the data first to get more accurate results
+    NORMALIZE = False  # We want to normalize the data first
+
     METRICS = {
-        "accuracy": metrics.accuracy,
-        "mcc": metrics.mcc,
-        "f1": metrics.f1,
-        "tp": metrics.true_positives,
-        "tn": metrics.true_negatives,
-        "fp": metrics.false_positives,
-        "fn": metrics.false_negatives,
-        "precision": metrics.precision,
-        "recall": metrics.recall
+        "confusion_matrix": metrics.get_confusion_matrix,
+        #"accuracy": metrics.accuracy
     }
     RESULTS_PATH = 'models/eval/results/'
+
     THRESHOLD = .5  # Probability above which we want to classify the node as 'SHOW'
 
 
@@ -78,4 +79,5 @@ class PredictConfig(ModelConfig):
         'SUSPICIOUS': None,
         'EXTERNAL': None
     }
+
     THRESHOLD = .5  # Probability above which we want to classify the node as 'SHOW'
