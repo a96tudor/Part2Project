@@ -29,7 +29,7 @@ class FeatureExtractor(object):
     def __init__(self,
                  nodes: list,
                  driver: AnotherDatabaseDriver,
-                 verbose: bool = False):
+                 verbose: bool = True):
         """
             CONSTRUCTOR
 
@@ -46,8 +46,6 @@ class FeatureExtractor(object):
         for node in nodes:
             assert(isinstance(node, dict))
             assert(list(node.keys()) == ['uuid', 'timestamp'])
-
-        #assert(driver.connection_active())
 
         self._nodes = nodes
         self._dbDriver = driver
@@ -654,5 +652,16 @@ class FeatureExtractor(object):
                 'id': (node['uuid'], node['timestamp'],),
                 'neighs': neighs
             })
+
+            if self._verbose:
+                cnt_done += 1
+
+                x = int(float(cnt_done/ total)*100)
+
+                if x-last_step >= PROGRESS_REPORT['step']:
+                    while x >= last_step:
+                        last_step += PROGRESS_REPORT['step']
+                    last_step -= PROGRESS_REPORT['step']
+                    print(PROGRESS_REPORT[last_step/100] % (cnt_done, total))
 
         return result

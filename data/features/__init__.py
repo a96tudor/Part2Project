@@ -23,8 +23,8 @@ from cypher_statements.config import RULES_TO_RUN
 import pandas as pd
 import pickle
 
-import json
-from data.utils import shuffle_dict, dump_json, shuffle_list, intersect_two_lists
+from data.utils import dump_json, shuffle_list, intersect_two_lists
+
 
 def search_in_list(id: tuple,
                    nodes: list) -> list:
@@ -199,7 +199,7 @@ def build_training_set(host: str,
         with open(rule_file) as f:
             rule_query = f.read()
             result = driver.execute_query(rule_query)
-
+            print("Executed query. %d to process" % len(result))
             for node in result:
                 try:
                     all_nodes.pop(all_nodes.index(node))
@@ -230,7 +230,7 @@ def build_training_set(host: str,
     # Setting the HIDE nodes limit so that the training set
     # roughly follows the 30-70 distribution of SHOW/HIDE nodes
     # present in the actual database
-    limit_for_hide = int((.7/.3) * len(RULES_TO_RUN) * limit_per_rule)
+    limit_for_hide = int((.7/.3) * 7 * limit_per_rule)
 
     print("Finished adding all SHOW labeled nodes. Added %d in total.\n" % len(full_results))
 

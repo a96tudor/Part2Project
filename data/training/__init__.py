@@ -1,6 +1,5 @@
 from data.features import constants as cnst
 from data.neo4J.database_driver import DatabaseDriver, AnotherDatabaseDriver
-from data.training.rules_handler import RulesHandler
 import pandas as pd, numpy as np
 from data.features.feature_extractor import FeatureExtractor
 
@@ -52,14 +51,14 @@ def generate_training_set(host,
     print('There are ' + str(_TOTAL_NO_OF_NODES) + ' nodes to process!')
 
     CURRENT_RULES = [
-        'rule1',
-        'rule2',
-        'rule3',
+        #'rule1',
+        #'rule2',
+        #'rule3',
         'rule4',
-        'rule5',
-        'rule8',
-        'rule9',
-        'rule10',
+        #'rule5',
+        #'rule8',
+        #'rule9',
+        #'rule10',
         'rule14'
     ]
 
@@ -68,6 +67,7 @@ def generate_training_set(host,
         with open(rules_path + rule + '.cyp') as f:
             rule_query = f.read()
             result = db.execute_query(rule_query)
+            print("Executed query!")
             show_nodes = show_nodes + result
 
             for node in result:

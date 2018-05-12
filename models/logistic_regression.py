@@ -25,7 +25,7 @@ from keras.regularizers import L1L2
 from keras.callbacks import ModelCheckpoint
 import numpy as np
 
-from models import Model
+from models.model import Model
 from models.config import *
 
 
@@ -44,6 +44,7 @@ class LogisticRegression(Model):
         super(LogisticRegression, self).__init__(config)
 
         self.model = Sequential()
+        self.name = 'logreg'
 
     def load_checkpoint(self,
                         path: str) -> None:
@@ -87,8 +88,7 @@ class LogisticRegression(Model):
         denseLayer = Dense(
             2,
             activation='softmax',
-            kernel_regularizer=L1L2(l1=.0, l2=.1),
-            kernel_initializer='uniform'
+            kernel_regularizer=L1L2(l1=.0, l2=.1)
         )
 
         # Adding layers
@@ -123,8 +123,8 @@ class LogisticRegression(Model):
         :return:                    -
         """
 
-        assert isinstance(self.config, (TrainConfig, EvalConfig, ))
-        assert isinstance(self.config, TrainConfig) or not save_checkpoint
+        assert self.config == TrainConfig or self.config == EvalConfig
+        assert self.config == TrainConfig or not save_checkpoint
 
         if not save_checkpoint:
             self.model.fit(
@@ -132,7 +132,8 @@ class LogisticRegression(Model):
                 y=trainY,
                 validation_data=(validateX, validateY),
                 batch_size=100,
-                epochs=1000
+                epochs=1000,
+                verbose=0
             )
         else:
             # We want to save the checkpoints.
@@ -147,7 +148,9 @@ class LogisticRegression(Model):
                 y=trainY,
                 validation_data=(validateX, validateY),
                 batch_size=100,
-                epochs=1000
+                epochs=1000,
+                verbose=0,
+                callbacks=[checkpointer]
             )
 
         self.trained = True
@@ -159,15 +162,14 @@ class LogisticRegression(Model):
         :param data:   feature matrix for which we do the predictions
         :return:       A numpy ndarray containing the classification results
         """
-        assert isinstance(self.config, (PredictConfig, EvalConfig, ))
+        assert self.config == PredictConfig or self.config == EvalConfig
         assert self.built
         assert self.trained
 
         return np.array(
-            self.model.predict(
+            self.model.predict_classes(
                 data,
                 batch_size=100,
-                steps=100,
                 verbose=0
             )
         )
@@ -179,7 +181,7 @@ class LogisticRegression(Model):
         :param data:    feature matrix for which we do the predictions
         :return:        A numpy ndarray containing the classification results
         """
-        assert isinstance(self.config, (PredictConfig, EvalConfig, ))
+        assert self.config in (PredictConfig, EvalConfig, )
         assert self.built
         assert self.trained
 
@@ -187,7 +189,6 @@ class LogisticRegression(Model):
             self.model.predict_proba(
                 data,
                 batch_size=100,
-                steps=100,
                 verbose=0
             )
         )

@@ -97,7 +97,7 @@ class GraphAttention(Layer):
                                     Has to be a tuple with length at least 2
         :return:                    -
         """
-        assert(len(input_shape)) > 2
+        assert(len(input_shape)) >= 2
 
         F = input_shape[0][-1]  # Length of input feature vectors
 
@@ -145,9 +145,8 @@ class GraphAttention(Layer):
         x = inputs[0]       # Feature vector of the input node
         X = inputs[1]       # Feature vectors of the neighbours
 
-        N = K.shape(X)[0]
-
-        features = None
+        N = K.int_shape(X)[1]
+        N_var = K.shape(X)[1]
 
         # Linear transformations for both x and X
 
@@ -159,11 +158,18 @@ class GraphAttention(Layer):
         attn_for_self = K.dot(x_transformed, self.attn_kernel[0])   # (1 x F') * (F' x 1) = (1 x 1)
         attn_for_neighs = K.dot(X_transformed, self.attn_kernel[1])  # (n x F') * (F' x 1) = (n x 1)
 
+        print(K.int_shape(attn_for_neighs))
+        print(K.int_shape(attn_for_self))
+
+        #print(attn_for_self.shape)
+
         # Repeating a_1^T * Wh_i n times
-        attn_for_self_repeat = K.repeat_elements(attn_for_self, rep=N, axis=0)
+        attn_for_self_repeat = K.repeat_elements(attn_for_self, rep=N, axis=1)
+        print(K.int_shape(attn_for_self_repeat))
 
         # Adding them up, to get a^T(Wh_i||Wh_j)
         dense = attn_for_self_repeat + attn_for_neighs  # (n x 1) + (n x 1) = (n x 1)
+        print(K.int_shape(dense))
         dense = K.transpose(dense)  # (n x 1)^T  = (1 x n)
 
         # Masking the values before activation
@@ -174,6 +180,7 @@ class GraphAttention(Layer):
 
         # Computing alpha_i,j = softmax(a^T[Wh_i||Wh_j])
         softmax = K.softmax(masked)
+        print(K.int_shape(softmax))
 
         # Adding dropout
         dropout = Dropout(self.attn_dropout)(softmax)
@@ -181,6 +188,7 @@ class GraphAttention(Layer):
         # Calculating the feature vector with respect with the neighbours
         # neigh = dropout^T * X_transformed
         features_neigh = K.dot(dropout, X_transformed)  # (1 x n) * (n x F') = (1 x F')
+        print(K.int_shape(features_neigh))
 
         # Now, the final step
         # newH_i = (1-self_importance)*neigh + self_imporance *x_transformed
