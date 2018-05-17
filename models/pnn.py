@@ -211,7 +211,7 @@ class ProbabilisticNeuralNetwork(Model):
                 classes[idx, 0] = 0
                 classes[idx, 1] = 0
 
-        return classes
+        return classes[:, 1]
 
     def predict_probs(self,
                       data: np.ndarray) -> np.ndarray:

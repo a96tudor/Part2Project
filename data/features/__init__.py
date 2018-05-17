@@ -291,6 +291,17 @@ def build_df_from_list(data: list):
 
     return df
 
+def get_df_from_list(data: list):
+    df = pd.DataFrame(columns=FEATURES_ONE_HOT)
+
+    for node in data:
+        new_entry = node['self']
+
+        new_df = pd.DataFrame(new_entry, index=[0])
+
+        df = pd.concat([df, new_df], axis=0, ignore_index=True)
+
+    return df
 
 def save_as_binary(data: pd.DataFrame,
                    path: str) -> None:

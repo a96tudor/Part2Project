@@ -21,3 +21,14 @@ jobsHandler = None
 cacheHandler = None
 featureExtractor = None
 model = None
+
+CLASSIFIABLE_NODES = [
+    'Process',
+    'File',
+    'Pipe'
+]
+
+UNCLASSIFIABLE_NODES = [
+    'Machine',
+    'Pipe'
+]

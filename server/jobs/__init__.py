@@ -17,13 +17,17 @@ limitations under the License.
 
 """
 from models.model import Model
-from data.features.feature_extractor import FeatureExtractor
+from data.features import get_dataset, build_df_from_list, get_node_type, get_closest_process, get_df_from_list
+from data.features.constants import FEATURES_ONE_HOT
 from data.neo4J.database_driver import AnotherDatabaseDriver
 from server.cache import CacheHandler
 from datetime import datetime as dt
+from server.utils import CLASSIFIABLE_NODES, UNCLASSIFIABLE_NODES
 from numpy import random
 import base64
-from server import utils
+import numpy as np
+import json
+from multiprocessing import Process
 
 
 class RequestJob(object):
@@ -57,6 +61,111 @@ class RequestJob(object):
         self.batchSize = batch_size
         self.status = 'WAITING'
 
+        self.to_extract = list()
+
+    def _preprocess_on_type(self):
+        """
+
+        :return:
+        """
+        results = list()
+
+        for node in self.nodes:
+            type = get_node_type(
+                driver=self.neo4jDriver,
+                uuid=node['uuid'],
+                timestamp=node['timestamp']
+            )
+
+            if type in CLASSIFIABLE_NODES:
+                self.to_extract.append(node)
+            else:
+                if type == 'Pipe':
+                    uuid, timestamp = get_closest_process(
+                        driver=self.neo4jDriver,
+                        uuid=node['uuid'],
+                        timestamp=node['timestamp']
+                    )
+                    self.to_extract.append({
+                        'uuid': uuid,
+                        'timestamp': timestamp
+                    })
+                elif type == 'Machine':
+                    results.append({
+                        'uuid': node['uuid'],
+                        'timestamp': node['timestamp'],
+                        'showProb': 1.0,
+                        'hideProb': 0.0,
+                        'recommended': 'SHOW'
+                    })
+                else:
+                    results.append({
+                        'uuid': node['uuid'],
+                        'timestamp': node['timestamp'],
+                        'showProb': 0.0,
+                        'hideProb': 1.0,
+                        'recommended': 'HIDE'
+                    })
+        return results
+
+    def _get_feature_vectors(self):
+        """
+
+        :return:
+        """
+        raw_feature_vectors = get_dataset(
+            driver=self.neo4jDriver,
+            nodes=self.to_extract,
+            include_NONE=True
+        )
+
+        results = list()
+        feature_vectors = list()
+
+        for fv in raw_feature_vectors:
+            if fv['self'] is None:
+                results.append({
+                    'uuid': fv['id'][0],
+                    'timestamp': fv['id'][1],
+                    'showProb': None,
+                    'hideProb': None,
+                    'recommended': None
+                })
+                self.to_extract.pop(self.to_extract.index({'uuid': fv['id'][0], 'timestamp': fv['id'][1]}))
+            else:
+                feature_vectors.append(fv)
+
+        feature_matrix = get_df_from_list(feature_vectors).as_matrix(columns=FEATURES_ONE_HOT)
+
+        return feature_matrix, results
+
+    def _process_probabilities(self,
+                               probs: np.ndarray):
+
+        """
+
+        :param probs:
+        :return:
+        """
+
+        results = list()
+
+        for i in range(len(probs)):
+            new_result = self.to_extract[i]
+            new_result['showProb'] = probs[i, 0]
+            new_result['hideProb'] = probs[i, 1]
+            new_result['classifiedBy'] = self.model.name
+
+            if probs[i, 0] >= probs[i, 1]:
+                new_result['recommended'] = 'SHOW'
+            else:
+                new_result['recommended'] = 'HIDE'
+
+            results.append(new_result)
+
+        return results
+
+
     def run(self):
         """
 
@@ -68,15 +177,21 @@ class RequestJob(object):
             self.status
         )
 
-        self.featureExtractor = FeatureExtractor(
-            nodes=self.nodes,
-            verbose=True,
-            driver=self.neo4jDriver
+        results = self._preprocess_on_type()
+
+        Xs, res = self._get_feature_vectors()
+
+        results += res
+
+        probs = self.model.predict_probs(
+            data=Xs
         )
 
-        feature_vectors = self.featureExtractor.get_feature_matrix()
+        res = self._process_probabilities(probs)
 
+        results += res
 
+        print(results)
 
 
 class JobsHandler(object):
