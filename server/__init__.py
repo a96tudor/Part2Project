@@ -8,19 +8,10 @@ from models.config import PredictConfig
 from server.views import *
 from server import utils
 
-def get_app(config_name):
-    """
-    :param config_name:     Type of configuration wanted for the REST API.
-                            Has to be one of: 'development', 'testing',
-                                              'staging', 'production'
-    :return:
-    """
-    return None
-
 
 class API(Flask):
     """
-        Class
+        Class represening REST API
     """
     def __init__(self,
                  include_name,
@@ -29,10 +20,10 @@ class API(Flask):
                  **kwargs):
         """
 
-        :param include_name:
-        :param config:
-        :param args:
-        :param kwargs:
+        :param include_name:    The name of the environment the API is run in
+        :param config:          The config the API is run in
+        :param args:            other arguments
+        :param kwargs:          other arguments
         """
 
         super(API, self).__init__(include_name, *args, **kwargs)

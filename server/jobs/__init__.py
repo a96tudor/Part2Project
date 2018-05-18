@@ -369,8 +369,6 @@ class JobsHandler(object):
 
         running_jobs = utils.cacheHandler.get_running_jobs()
 
-        print(running_jobs)
-
         if len(running_jobs) > 0:
             return None
 

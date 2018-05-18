@@ -33,8 +33,7 @@ _ACCEPTED_MODELS = {
     'cnn': ConvolutionalNeuralNetwork,
     'pnn': ProbabilisticNeuralNetwork,
     'mlp': MultilayerPerceptron,
-    'logreg': LogisticRegression,
-    'gat': GraphAttentionNetwork
+    'logreg': LogisticRegression
 }
 
 

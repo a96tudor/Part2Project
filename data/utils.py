@@ -1,3 +1,22 @@
+"""
+Part2Project -- utils.py
+
+Copyright May 2018 [Tudor Mihai Avram]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+"""
+
 import pandas as pd
 import numpy as np
 from sklearn.utils import shuffle
@@ -55,7 +74,7 @@ def read_csv(path, label_cols, drop_cols=None, normalize=True, shuffle=True):
         feature_cols = get_diff(df.columns.values, label_cols)
         df.loc[:, feature_cols] = normalize_df(df.loc[:, feature_cols])
 
-    #print(df.head)
+    # print(df.head)
 
     return df
 
@@ -139,7 +158,7 @@ def normalize_df(df):
     :return:        The normalized dataframe
     """
 
-    #TODO: IMPLEMENT THIS
+    # TODO: IMPLEMENT THIS
     return df
 
 
@@ -157,8 +176,8 @@ def split_dataframe(df, label_cols, test_part, percentile=0.90):
     """
     print()
     print("Starting new split: \n    Dataframe length: %d \n    Test section: %d" % (len(df), test_part))
-    test_left = int((1-percentile)*(test_part - 1)*len(df))
-    test_right = min(int((1-percentile)*test_part*len(df) - 1), len(df) - 1)
+    test_left = int((1 - percentile) * (test_part - 1) * len(df))
+    test_right = min(int((1 - percentile) * test_part * len(df) - 1), len(df) - 1)
 
     print("Test interval: %d - %d" % (test_left, test_right))
     print()
@@ -166,14 +185,14 @@ def split_dataframe(df, label_cols, test_part, percentile=0.90):
     testDF = df.iloc[test_left:test_right, :]
 
     if test_left == 0:
-        trainDF = df.iloc[test_right+1:, :]
+        trainDF = df.iloc[test_right + 1:, :]
     elif test_right == len(df) - 1:
-        trainDF = df.iloc[:test_left-1, :]
+        trainDF = df.iloc[:test_left - 1, :]
     else:
-        df1 = df.iloc[:test_left-1, :]        
-        df2 = df.iloc[test_right+1, :]
-        
-        df2 = df.iloc[test_right+1:, :]
+        df1 = df.iloc[:test_left - 1, :]
+        df2 = df.iloc[test_right + 1, :]
+
+        df2 = df.iloc[test_right + 1:, :]
         trainDF = pd.concat([df1, df2], axis=0, ignore_index=True)
 
     trainX, trainY = get_features_and_labels(trainDF, label_cols)
@@ -248,7 +267,7 @@ def dump_json(data,
     :return:                -
     """
     try:
-        assert(type(data) in [list, dict])
+        assert (type(data) in [list, dict])
     except AssertionError:
         print("Invalid datatype! Expected list or dict, got ", type(data))
         return
@@ -295,9 +314,9 @@ def get_new_filename_in_dir(dir_path: str,
 
     if len(existent_docs) > 0:
         next_idx = max([
-                    int(x['name']) if x and x['format'] == format else 0
-                    for x in existent_docs
-                ]) + 1
+            int(x['name']) if x and x['format'] == format else 0
+            for x in existent_docs
+        ]) + 1
 
     file_path = "%s/%d.%s" % (dir_path, next_idx, format)
 
@@ -321,7 +340,7 @@ def split_list(data: list,
     """
 
     assert purpose in ['test', 'validation']
-    assert test_section <= int(1.0/(1-percentile))
+    assert test_section <= int(1.0 / (1 - percentile))
 
     test_left = int((1 - percentile) * (test_section - 1) * len(data))
     test_right = min(int((1 - percentile) * test_section * len(data) - 1), len(data) - 1)
@@ -333,10 +352,11 @@ def split_list(data: list,
     print("   %s interval: %d - %d" % (purpose, test_left, test_right))
     print()
 
-    test_list = data[test_left+1:test_right+2]
-    train_list = data[:test_left+1] + data[test_right+2:]
+    test_list = data[test_left + 1:test_right + 2]
+    train_list = data[:test_left + 1] + data[test_right + 2:]
 
     return train_list, test_list
+
 
 def append_dict_to_df(new_data: dict,
                       df: pd.DataFrame) -> pd.DataFrame:
@@ -436,13 +456,13 @@ def process_list(data: list,
         )
 
         cnt_done += 1
-        #print("%d/ %d Done!" % (cnt_done, len(data)))
+        # print("%d/ %d Done!" % (cnt_done, len(data)))
 
     print("Done!")
 
     X = X_df.as_matrix(columns=features)
     Y = Y_df.as_matrix(columns=labels)
-    #N = np.array(N_list)
+    # N = np.array(N_list)
 
     return X, N, Y
 

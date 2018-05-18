@@ -115,8 +115,8 @@ class AnotherDatabaseDriver(object):
                 Method that executes a given query and returns its result,
                 as a list of dictionaries.
 
-        :param query:
-        :param kwargs:
+        :param query:           The query to be executed
+        :param kwargs:          The other parameters that are required for the query
         :return:
         """
         session = self._driver.session()
@@ -137,8 +137,13 @@ class AnotherDatabaseDriver(object):
 
     def close(self):
         """
+            Method that closes the database connection
 
-        :return:
+        :return:        -
         """
 
         self._driver.close()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+
+        self.close()

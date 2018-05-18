@@ -10,6 +10,9 @@ from pickle import dump, load
 from data.utils import read_csv, split_dataframe, dump_json, get_new_filename_in_dir
 
 class ProbabilisticNeuralNetwork(Model):
+    """
+        Class representing the Probabilistic Neural Network
+    """
 
     def __init__(self,
                  config: ModelConfig):
