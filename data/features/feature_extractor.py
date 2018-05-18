@@ -17,7 +17,7 @@ limitations under the License.
 
 """
 
-from data.neo4J.database_driver import DatabaseDriver, AnotherDatabaseDriver
+from data.neo4J.database_driver import AnotherDatabaseDriver
 import pandas as pd
 from strings import LINE_DELIMITER, PROGRESS_REPORT
 from data.features.constants import *

@@ -58,5 +58,5 @@ def accuracy(y_true: np.ndarray,
     :return:              The corresponding accuracy
     """
 
-    return accuracy(y_true, y_pred)
+    return accuracy_score(y_true, y_pred)
 
