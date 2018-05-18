@@ -264,15 +264,12 @@ class RequestJob(object):
         self._look_for_cached_values()
 
         Xs, res = self._get_feature_vectors()
-        print('finished extracting feature vectors')
         results += res
 
-        print(self.model)
 
         probs = self.model.predict_probs(
             data=Xs
         )
-        print('finished extracting probabilities')
 
         res = self._process_probabilities(probs)
         results += res
@@ -369,6 +366,13 @@ class JobsHandler(object):
         :param neo4jDriver:
         :return:
         """
+
+        running_jobs = utils.cacheHandler.get_running_jobs()
+
+        print(running_jobs)
+
+        if len(running_jobs) > 0:
+            return None
 
         newJobID = self._generate_jobID(len(nodes))[:20]
 

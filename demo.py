@@ -84,7 +84,7 @@ def main(nodes):
     print('Job status is: %s' % data['status'])
 
     print('Sleeping for a couple more seconds')
-    time.sleep(30)
+    time.sleep(15)
 
     req = urllib.request.Request(url)
     response = urllib.request.urlopen(req)
@@ -93,6 +93,13 @@ def main(nodes):
     print('Ok, cool. Now job status is: %s' % data['status'])
     print('And the results are...')
     print(json.dumps(data['results']))
+
+    print("Now deleting the cache")
+
+    url = 'http://127.0.0.1:5000/clear-cache'
+
+    req = urllib.request.Request(url)
+    _ = urllib.request.urlopen(req)
 
 if __name__ == "__main__":
     neo4Jdriver = AnotherDatabaseDriver(

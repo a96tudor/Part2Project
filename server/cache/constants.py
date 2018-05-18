@@ -82,7 +82,7 @@ SELECTS = {
 
     'running-jobs': 'SELECT jobs.jobid '
                         'FROM jobs '
-                    'WHERE jobs.status="RUNNING"',
+                    "WHERE jobs.status='RUNNING'",
 
     'node-existance': 'SELECT count(*) AS count '
                 'FROM nodes '
@@ -124,4 +124,8 @@ UPDATES = {
                     "WHERE uuid='%s' AND timemstmp=%s"
 }
 
+DELETE_CUSTOM = 'DELETE FROM %s'
+
 ACCEPTED_JOB_STATUS = ['WAITING', 'RUNNING', 'STOPPED', 'DONE']
+
+TABLES = ['jobs', 'nodes', 'jobstonodes']

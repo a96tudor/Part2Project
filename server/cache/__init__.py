@@ -108,8 +108,6 @@ class CacheHandler(object):
         try:
             results = self.postgresDriver.execute_SELECT(query, (jobID, ))
 
-            print(results)
-
             if len(results) == 0:
                 return None
 
@@ -239,6 +237,9 @@ class CacheHandler(object):
 
         status = self.postgresDriver.execute_SELECT(query, jobID)
 
+        if status is None or len(status) == 0:
+            return None
+
         return status[0][0]
 
     def add_node_to_job_rel(self,
@@ -301,8 +302,6 @@ class CacheHandler(object):
 
         jobInnerID = self._get_job_id(jobID)
 
-        print(jobID)
-
         if jobInnerID is None:
             # The jobID is not valid!! Therefore, fail!
             return False
@@ -340,7 +339,6 @@ class CacheHandler(object):
                 return True
             except:
                 # The update failed, so return False
-                print("Fails at update")
                 return False
 
         # If the node wasn't already in the database,
@@ -348,21 +346,15 @@ class CacheHandler(object):
 
         query = INSERTS['new-node']
 
-        print('trying to do the insert')
-
         self.postgresDriver.execute_INSERT(
             query,
             uuid, timestamp, showProb, hideProb, recommended, classifiedbY
         )
 
-        print('done the insert')
-
         # Now getting the node ID
         nodeInnerID = self._get_node_id(uuid=uuid, timestamp=timestamp)
 
         query = INSERTS['node-to-job-rel']
-
-        #print(jobInnerID, nodeInnerID)
 
         self.postgresDriver.execute_INSERT(
             query,
@@ -419,7 +411,7 @@ class CacheHandler(object):
         return results
 
     def get_nodes_for_job(self,
-                          jobID: str) -> dict:
+                          jobID: str):
         """
 
         :param jobID:        The id of the job we extract the classification results for
@@ -440,6 +432,9 @@ class CacheHandler(object):
 
         status = self.get_job_status(jobID)
 
+        if status is None:
+            return None
+
         final_results = dict()
         final_results['status'] = status
         final_results['results'] = list()
@@ -455,3 +450,15 @@ class CacheHandler(object):
             })
 
         return final_results
+
+    def clear_cache(self):
+        """
+            Method used to clear the cache database
+
+        :return:        -
+        """
+
+        for table in TABLES:
+            query = DELETE_CUSTOM % table
+
+            self.postgresDriver.execute_DELETE(query)

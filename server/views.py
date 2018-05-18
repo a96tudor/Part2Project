@@ -108,8 +108,6 @@ class ClassifyView(View):
                 response=msg
             )
 
-        print(utils.jobsHandler)
-
         if not isinstance(utils.jobsHandler, JobsHandler):
             return Response(
                 status=500,
@@ -121,7 +119,11 @@ class ClassifyView(View):
         try:
             id = utils.jobsHandler.add_job(request.json['nodes'])
 
-            print(id)
+            if id is None:
+                return Response(
+                    status=500,
+                    response='Maximum number of running jobs achieved'
+                )
 
             response['status'] = 'Success'
             response['jobID'] = id
@@ -255,14 +257,11 @@ class CacheResetView(View):
     """
         View class that handles requests that cause the cache database to be cleaned.
 
-        Path: /reset-cache?forced=<True/False>
-        Methods: PUT
+        Path: /reset-cache
+        Methods: GET
 
-        The 'forced' flag here is optional. By default, it will be set to False.
-        When set to True, it will forcibly delete any running jobs and then clears the cache.
-        Otherwise, it will return with HTTP code 400 (Invalid request) if there is a job running.
     """
-    methods = ['PUT']
+    methods = ['GET']
 
     def validate_input(self):
         """
@@ -298,6 +297,6 @@ class CacheResetView(View):
                 response=msg
             )
 
-        # TODO: finish implementation
+        utils.cacheHandler.clear_cache()
 
         return Response(200)

@@ -2,6 +2,8 @@ from flask import Flask, request, Response, jsonify
 #from server.config import Config
 from server.cache import CacheHandler
 from data.neo4J.database_driver import AnotherDatabaseDriver
+from models import get_model
+from models.config import PredictConfig
 
 from server.views import *
 from server import utils
@@ -59,4 +61,8 @@ class API(Flask):
             defaultModel=config.MODEL
         )
 
-
+        utils.model = get_model(
+            name=config.MODEL['name'],
+            config=PredictConfig,
+            checkpoint=config.MODEL['checkpoint']
+        )

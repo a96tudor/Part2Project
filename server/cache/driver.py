@@ -1,4 +1,6 @@
 """
+File containing the PostgreSQL Driver
+
 Part2Project -- driver.py
 
 Copyright Apr 2018 [Tudor Mihai Avram]
@@ -23,7 +25,7 @@ from exceptions.server.cache import *
 
 class PostgresDriver(object):
     """
-        Class representing the
+        Wrapper class handling PostgreSQL interaction
     """
     def __init__(self,
                  host,
@@ -33,11 +35,11 @@ class PostgresDriver(object):
                  password):
         """
 
-        :param host:
-        :param port:
-        :param dbName:
-        :param user:
-        :param password:
+        :param host:            The host to connect to
+        :param port:            The port # to connect to
+        :param dbName:          The name of the database to connect to
+        :param user:            The username to connect with
+        :param password:        The password to connect with
         """
 
         try:
@@ -123,6 +125,9 @@ class PostgresDriver(object):
     def setup_database(self):
         """
 
+            Method that creates the necessary tables for the
+            cache database to run.
+
         :return:
         """
         for table in DATABASE_SETUP:
@@ -176,9 +181,11 @@ class PostgresDriver(object):
                        *args):
         """
 
-        :param query:
-        :param args:
-        :return:
+            Method executing UPDATE queries
+
+        :param query:       The query to be executed
+        :param args:        Other potential arguments for running the query
+        :return:            -
         """
 
         self.reset_connection()
@@ -278,4 +285,9 @@ class PostgresDriver(object):
         :return:            -
         """
 
-        
+        cursor = self.conn.cursor()
+
+        cursor.execute(query, args)
+
+        self.conn.commit()
+        cursor.close()
