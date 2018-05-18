@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
-
 jobsHandler = None
 cacheHandler = None
 featureExtractor = None
@@ -32,3 +31,4 @@ UNCLASSIFIABLE_NODES = [
     'Machine',
     'Pipe'
 ]
+

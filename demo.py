@@ -21,7 +21,33 @@ from models import get_model
 from data.neo4J.database_driver import AnotherDatabaseDriver
 from server.cache import CacheHandler
 from models.config import PredictConfig
-from server.jobs import RequestJob
+from server.jobs import JobsHandler
+from server.config import Config as ServerConfig
+from cypher_statements.config import RULES_TO_RUN
+import json
+import urllib.request
+import ssl
+import time
+
+
+def send_data(data, suffix):
+    context = ssl._create_unverified_context()
+
+    req = urllib.request.Request("http://127.0.0.1:5000"+suffix)
+    req.add_header('Content-Type', 'application/json; charset=utf-8')
+
+    jsondata = json.dumps(data)
+    jsondataasbytes = jsondata.encode('utf-8')  # needs to be bytes
+    req.add_header('Content-Length', len(jsondataasbytes))
+
+    response = urllib.request.urlopen(req, jsondataasbytes, context=context)
+
+    print("The result is: ")
+    bytes_data = response.read()
+
+    dictionary = json.loads(bytes_data)
+    return dictionary
+
 
 def get_random_nodes(n, driver):
 
@@ -31,7 +57,44 @@ def get_random_nodes(n, driver):
 
     return driver.execute_query(q)
 
-def main():
+
+def main(nodes):
+
+    data = {
+        'nodes': nodes
+    }
+
+    path = '/classify'
+
+    result = send_data(data, path)
+
+    id = result['jobID']
+
+    print("Sleeping for 5 seconds...")
+    time.sleep(1)
+    print("Done... Let's see how the job is doing")
+
+    path = '/job-action?action=results&id=%s' % id
+    url = 'http://127.0.0.1:5000%s' % path
+
+    req = urllib.request.Request(url)
+    response = urllib.request.urlopen(req)
+    data = json.loads(response.read())
+
+    print('Job status is: %s' % data['status'])
+
+    print('Sleeping for a couple more seconds')
+    time.sleep(30)
+
+    req = urllib.request.Request(url)
+    response = urllib.request.urlopen(req)
+    data = json.loads(response.read())
+
+    print('Ok, cool. Now job status is: %s' % data['status'])
+    print('And the results are...')
+    print(json.dumps(data['results']))
+
+if __name__ == "__main__":
     neo4Jdriver = AnotherDatabaseDriver(
         host='bolt://127.0.0.1',
         port=7687,
@@ -39,30 +102,6 @@ def main():
         pswd='opus'
     )
 
-    cacheHandler = CacheHandler(
-        host='127.0.0.1', port=5432, dbName='server-cache', user='tma33', password='opus'
-    )
+    nodes = get_random_nodes(10, driver=neo4Jdriver)
 
-    model = get_model(
-        name='cnn',
-        config=PredictConfig
-    )
-
-    model.load_checkpoint('models/checkpoints/cnn.hdf5')
-
-    nodes = get_random_nodes(n=30, driver=neo4Jdriver)
-
-    job = RequestJob(
-        driver=neo4Jdriver,
-        model=model,
-        cache_handler=cacheHandler,
-        jobID='demoJob1',
-        ttl=10000,
-        batch_size=100,
-        nodes=nodes
-    )
-
-    job.run()
-
-if __name__ == "__main__":
-    main()
+    main(nodes)

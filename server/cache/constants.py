@@ -21,15 +21,15 @@ DATABASE_SETUP = {
     "jobs": "CREATE TABLE jobs (" 
                 "id SERIAL PRIMARY KEY, "
                 "jobID VARCHAR(32) NOT NULL, "
-                "status VARCHAR(10) NOT NULL, "
+                "status VARCHAR(100) NOT NULL, "
                 "started DATE NOT NULL, "
                 "stopped DATE"
             ")",
 
     "nodes": "CREATE TABLE nodes ("
                 "id SERIAL PRIMARY KEY, "
-                "uuid VARCHAR(50) NOT NULL, "
-                "timemstmp INT NOT NULL, "
+                "uuid VARCHAR(100) NOT NULL, "
+                "timemstmp BIGINT NOT NULL, "
                 "classifiedBy VARCHAR(50), "
                 "validUntil DATE, "
                 "showLikelihood FLOAT, "
@@ -57,39 +57,46 @@ SELECTS = {
                 'FROM jobs '
              'WHERE jobs.jobID=%s',
 
-    'node-cache-status': 'SELECT n.validUntil '
-                            'FROM nodes AS n '
-                            'WHERE n.uuid=%s AND n.timemstmp=%s',
+    'node-cache-status': 'SELECT validuntil '
+                            'FROM nodes '
+                        'WHERE uuid=%s AND timemstmp=%s',
 
     'jobs-by-status': 'SELECT count(*) as count '
                         'FROM jobs '
                     'WHERE jobs.status=%s',
 
-    'nodes-for-job': 'SELECT n.uuid, n.timestmp, n.validUntil, n.showLikelihood, n.hideLikelihood, n.recommended '
+    'nodes-for-job': 'SELECT n.uuid, n.timemstmp, n.validuntil, n.showlikelihood, n.hidelikelihood, n.recommended, n.classifiedby '
                         'FROM nodes AS n '
-                        'INNER JOIN jobsToNodes as jtn ON n.id=jtn.nodeID '
-                        'INNER JOIN jobs as j ON jtn.jobID=j.id '
-                     'WHERE j.jobID=%s',
+                        'INNER JOIN jobsToNodes as jtn ON n.id=jtn.nodeid '
+                        'INNER JOIN jobs as j ON jtn.jobid=j.id '
+                     'WHERE j.jobid=%s',
 
     'job-status': 'SELECT jobs.status '
                     'FROM jobs '
                   'WHERE jobs.jobID=%s',
 
-    'node-classification-results': 'SELECT nodes.showLikelihood, nodes.hideLikelihood, nodes.recommended '
+    'node-classification-results': 'SELECT nodes.showlikelihood, nodes.hidelikelihood, nodes.recommended, nodes.classifiedby '
                                         'FROM nodes '
-                                   'WHERE nodes.uuid=%s AND nodes.timemstmp=%s',
+                                   'WHERE nodes.uuid=%s AND nodes.timemstmp=%s '
+                                   'LIMIT 1',
 
-    'running-jobs': 'SELECT jobs.jobID '
+    'running-jobs': 'SELECT jobs.jobid '
                         'FROM jobs '
                     'WHERE jobs.status="RUNNING"',
 
-    'node-existance': 'SELECT count(*) AS count'
+    'node-existance': 'SELECT count(*) AS count '
                 'FROM nodes '
             'WHERE nodes.uuid=%s AND nodes.timestmp=%s',
 
     'nodeID': 'SELECT nodes.id '
               'FROM nodes '
-              'WHERE nodes.uuid=%s AND nodes.timemstmp=%s'
+              'WHERE nodes.uuid=%s AND nodes.timemstmp=%s',
+
+    'inner-nodes-for-job': 'SELECT jtn.nodeid '
+                            'FROM jobstonodes AS jtn '
+                            'INNER JOIN jobs AS j '
+                                'ON jtn.jobid=j.id '
+                           'WHERE j.jobid=%s'
 }
 
 INSERTS = {
@@ -106,16 +113,15 @@ INSERTS = {
 }
 
 UPDATES = {
-    'job-status': 'UPDATE jobs '
-                    'SET jobs.status=%s '
-                  'WHERE jobs.jobID=%s',
+    'job-status': "UPDATE jobs "
+                    "SET status='%s' "
+                  "WHERE jobid='%s'",
 
     'node-results': 'UPDATE nodes '
-                        'SET nodes.showlikelihood=%s, '
-                            'nodes.hidelikelihood=%s, '
-                            'nodes.recommended=%s, '
-                            'nodes.validuntil=%s '
-                    'WHERE nodes.uuid=%s, nodes.timestmp=%s'
+                        'SET showlikelihood=%f, '
+                            'hidelikelihood=%f, '
+                            "recommended='%s' "
+                    "WHERE uuid='%s' AND timemstmp=%s"
 }
 
 ACCEPTED_JOB_STATUS = ['WAITING', 'RUNNING', 'STOPPED', 'DONE']

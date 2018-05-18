@@ -17,18 +17,20 @@ limitations under the License.
 
 """
 from models.model import Model
+from models import get_model
+from models.config import PredictConfig
 from data.features import get_dataset, build_df_from_list, get_node_type, get_closest_process, get_df_from_list
 from data.features.constants import FEATURES_ONE_HOT
 from data.neo4J.database_driver import AnotherDatabaseDriver
 from server.cache import CacheHandler
 from datetime import datetime as dt
 from server.utils import CLASSIFIABLE_NODES, UNCLASSIFIABLE_NODES
-from numpy import random
+import random
 import base64
 import numpy as np
 import json
 from multiprocessing import Process
-
+from server import utils
 
 class RequestJob(object):
     """
@@ -55,13 +57,16 @@ class RequestJob(object):
         self.nodes = nodes
         self.model = model
         self.cacheHandler = cache_handler
+        self.cacheHandler.postgresDriver.reset_connection()
         self.neo4jDriver = driver
         self.jobID = jobID
         self.ttl = ttl
         self.batchSize = batch_size
         self.status = 'WAITING'
 
+        self.assoc = list()
         self.to_extract = list()
+        self.cached = list()
 
     def _preprocess_on_type(self):
         """
@@ -71,6 +76,10 @@ class RequestJob(object):
         results = list()
 
         for node in self.nodes:
+
+            if node['uuid'] is None or node['timestamp'] is None:
+                continue
+
             type = get_node_type(
                 driver=self.neo4jDriver,
                 uuid=node['uuid'],
@@ -90,13 +99,26 @@ class RequestJob(object):
                         'uuid': uuid,
                         'timestamp': timestamp
                     })
+
+                    self.assoc.append({
+                        'original': {
+                            'uuid': node['uuid'],
+                            'timestamp': node['timestamp']
+                        },
+                        'for_result': {
+                            'uuid': uuid,
+                            'timestamp': timestamp
+                        }
+                    })
+
                 elif type == 'Machine':
                     results.append({
                         'uuid': node['uuid'],
                         'timestamp': node['timestamp'],
                         'showProb': 1.0,
                         'hideProb': 0.0,
-                        'recommended': 'SHOW'
+                        'recommended': 'SHOW',
+                        'classifiedBy': 'N/A'
                     })
                 else:
                     results.append({
@@ -104,7 +126,8 @@ class RequestJob(object):
                         'timestamp': node['timestamp'],
                         'showProb': 0.0,
                         'hideProb': 1.0,
-                        'recommended': 'HIDE'
+                        'recommended': 'HIDE',
+                        'classifiedBy': 'N/A'
                     })
         return results
 
@@ -129,9 +152,9 @@ class RequestJob(object):
                     'timestamp': fv['id'][1],
                     'showProb': None,
                     'hideProb': None,
-                    'recommended': None
+                    'recommended': None,
+                    'classifiedBy': 'N/ A'
                 })
-                self.to_extract.pop(self.to_extract.index({'uuid': fv['id'][0], 'timestamp': fv['id'][1]}))
             else:
                 feature_vectors.append(fv)
 
@@ -165,6 +188,65 @@ class RequestJob(object):
 
         return results
 
+    def _look_for_cached_values(self):
+        """
+
+        :return:
+        """
+
+        for node in self.to_extract:
+            cache_valid = utils.cacheHandler.cache_valid(
+                uuid=node['uuid'],
+                timestamp=node['timestamp']
+            )
+
+            if cache_valid:
+                self.to_extract.pop(self.to_extract.index(node))
+                self.cached.append(node)
+
+    def _add_results_to_cache(self,
+                              results: list):
+        """
+
+        :param results:         The list of results that need to be cached
+        :return:
+        """
+
+        for node in results:
+            utils.cacheHandler.add_node_results(
+                jobID=self.jobID,
+                uuid=node['uuid'],
+                timestamp=node['timestamp'],
+                showProb=float(node['showProb']) if node['showProb'] else None,
+                hideProb=float(node['hideProb']) if node['hideProb'] else None,
+                recommended=node['recommended'],
+                classifiedbY=node['classifiedBy']
+            )
+
+        for entry in self.assoc:
+            node = results[results.index(entry['for_result'])]
+            utils.cacheHandler.add_node_results(
+                jobID=self.jobID,
+                uuid=entry['original']['uuid'],
+                timestamp=node['original']['timestamp'],
+                showProb=float(node['showProb']) if node['showProb'] else None,
+                hideProb=float(node['hideProb']) if node['hideProb'] else None,
+                recommended=node['recommended'],
+                classifiedbY=node['classifiedBy']
+            )
+
+    def _add_connections_for_cached_values(self):
+        """
+
+        :return:
+        """
+        for node in self.cached:
+
+            utils.cacheHandler.add_node_to_job_rel(
+                uuid=node['uuid'],
+                timestamp=node['timestamp'],
+                jobID=self.jobID
+            )
 
     def run(self):
         """
@@ -172,26 +254,57 @@ class RequestJob(object):
         :return:    -
         """
         self.status = 'RUNNING'
-        self.cacheHandler.update_job_status(
+        utils.cacheHandler.update_job_status(
             self.jobID,
             self.status
         )
 
         results = self._preprocess_on_type()
 
-        Xs, res = self._get_feature_vectors()
+        self._look_for_cached_values()
 
+        Xs, res = self._get_feature_vectors()
+        print('finished extracting feature vectors')
         results += res
+
+        print(self.model)
 
         probs = self.model.predict_probs(
             data=Xs
         )
+        print('finished extracting probabilities')
 
         res = self._process_probabilities(probs)
-
         results += res
 
-        print(results)
+        self._add_results_to_cache(results=results)
+
+        self._add_connections_for_cached_values()
+
+        utils.cacheHandler.update_job_status(
+            jobID=self.jobID,
+            newStatus='DONE'
+        )
+
+
+def run_job(jobID: str,
+            model: Model,
+            neo4JDriver: AnotherDatabaseDriver,
+            nodes: list,
+            cacheHandler: CacheHandler,
+            ttl: int):
+
+    job = RequestJob(
+        nodes=nodes,
+        model=model,
+        cache_handler=cacheHandler,
+        driver=neo4JDriver,
+        jobID=jobID,
+        ttl=ttl if ttl else ttl,
+        batch_size=len(nodes)
+    )
+
+    job.run()
 
 
 class JobsHandler(object):
@@ -202,7 +315,7 @@ class JobsHandler(object):
                  neo4jConnData: dict,
                  cacheConnData: dict,
                  defaultTTL: int,
-                 defaultModel: str):
+                 defaultModel: dict):
         """
 
         :param neo4jConnData:
@@ -211,12 +324,11 @@ class JobsHandler(object):
         :param defaultModel:
         """
         self.cacheConnData = cacheConnData
-
         self.defaultModel = defaultModel
-
         self.defaultTTL = defaultTTL
-
         self.neo4jConnData = neo4jConnData
+
+        self.processes = list()
 
     def _generate_jobID(self,
                         nodesCount: int):
@@ -230,7 +342,7 @@ class JobsHandler(object):
         :return:                The generated jobID
         """
         current_date = str(dt.now()).replace(' ', '').replace('-', '').replace('.', '').replace(':', '')
-        rnd_seq = ''.join([str(x) for x in random.choice(9, 5)])
+        rnd_seq = ''.join([str(x) for x in np.random.choice(9, 5)])
 
         raw_string = "%s%s" % (current_date, rnd_seq)
 
@@ -247,28 +359,72 @@ class JobsHandler(object):
                 ttl=None,
                 model=None,
                 cacheHandler=None,
-                featureExtractor=None):
+                neo4jDriver=None):
         """
 
         :param nodes:
         :param ttl:
         :param model:
         :param cacheHandler:
-        :param featureExtractor:
+        :param neo4jDriver:
         :return:
         """
 
-        newJobID = self._generate_jobID(len(nodes))
+        newJobID = self._generate_jobID(len(nodes))[:20]
 
-        newJob = RequestJob(
-            nodes=nodes,
-            model=model if model else self.defaultModel,
-            cache_handler=cacheHandler if cacheHandler else self.defaultCacheHandler,
-            feature_extractor=featureExtractor if featureExtractor else self.defaultFeatureExtractor,
+        if cacheHandler is None:
+            cacheHandler = CacheHandler(
+                user=self.cacheConnData['user'],
+                password=self.cacheConnData['password'],
+                host=self.cacheConnData['host'],
+                port=self.cacheConnData['port'],
+                dbName=self.cacheConnData['dbName']
+            )
+
+        if neo4jDriver is None:
+            neo4jDriver = AnotherDatabaseDriver(
+                host=self.neo4jConnData['host'],
+                port=self.neo4jConnData['port'],
+                user=self.neo4jConnData['user'],
+                pswd=self.neo4jConnData['password']
+            )
+
+        if model is None:
+            model = get_model(
+                name=self.defaultModel['name'],
+                config=PredictConfig,
+                checkpoint=self.defaultModel['checkpoint']
+            )
+
+        cacheHandler.add_new_job(
             jobID=newJobID,
-            ttl=self.defaultTTL
+            status='WAITING',
+            startedAt=None
         )
 
+        utils.cacheHandler = CacheHandler(
+            user=self.cacheConnData['user'],
+            password=self.cacheConnData['password'],
+            host=self.cacheConnData['host'],
+            port=self.cacheConnData['port'],
+            dbName=self.cacheConnData['dbName']
+        )
 
+        newProcess = Process(
+            target=run_job,
+            args=(newJobID,
+                  model,
+                  neo4jDriver,
+                  nodes,
+                  cacheHandler,
+                  self.defaultTTL)
+        )
 
+        newProcess.daemon = True
+
+        newProcess.start()
+
+        self.processes.append(newProcess)
+
+        return newJobID
 

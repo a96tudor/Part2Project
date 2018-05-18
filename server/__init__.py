@@ -1,11 +1,10 @@
 from flask import Flask, request, Response, jsonify
 #from server.config import Config
+from server.cache import CacheHandler
+from data.neo4J.database_driver import AnotherDatabaseDriver
+
 from server.views import *
-
-jobsHandler = None
-cacheHandler = None
-featureExtractor = None
-
+from server import utils
 
 def get_app(config_name):
     """
@@ -42,3 +41,22 @@ class API(Flask):
                 view['url'],
                 view_func=view['class'].as_view(view['url'])
             )
+
+        self.cacheConnData = config.CACHE_CONN_DATA
+
+        utils.cacheHandler = CacheHandler(
+            user=self.cacheConnData['user'],
+            password=self.cacheConnData['password'],
+            host=self.cacheConnData['host'],
+            port=self.cacheConnData['port'],
+            dbName=self.cacheConnData['dbName']
+        )
+
+        utils.jobsHandler = JobsHandler(
+            cacheConnData=config.CACHE_CONN_DATA,
+            neo4jConnData=config.NEO4J_CONN_DATA,
+            defaultTTL=config.TTL,
+            defaultModel=config.MODEL
+        )
+
+

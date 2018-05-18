@@ -108,12 +108,37 @@ class CacheHandler(object):
         try:
             results = self.postgresDriver.execute_SELECT(query, (jobID, ))
 
+            print(results)
+
             if len(results) == 0:
                 return None
 
             return results[0][0]
         except:
             return None
+
+    def _node_clashes_with_job(self,
+                               jobID: str,
+                               innerNodeID: int):
+        """
+
+        :param jobID:
+        :return:
+        """
+
+        query = SELECTS['inner-nodes-for-job']
+
+        results = self.postgresDriver.execute_SELECT(
+            query,
+            jobID
+        )
+
+        if results is None or len(results) == 0:
+            return False
+
+        nodes = [x[0] for x in results]
+
+        return innerNodeID in nodes
 
     def get_running_jobs(self):
         """
@@ -144,7 +169,6 @@ class CacheHandler(object):
         """
         assert(status in ACCEPTED_JOB_STATUS)
 
-
         query = INSERTS['new-job']
         if startedAt is None:
             startedAt = dt.now()
@@ -169,15 +193,13 @@ class CacheHandler(object):
         """
         assert(newStatus in ACCEPTED_JOB_STATUS)
 
-        try:
-            query = UPDATES['job-status']
-            self.postgresDriver.execute_UPDATE(
-                query,
-                (jobID, newStatus, )
-            )
-            return True
-        except:
-            return False
+
+        query = UPDATES['job-status']
+        self.postgresDriver.execute_UPDATE(
+            query,
+            newStatus, jobID
+        )
+        return True
 
     def stop_job(self,
                  jobID:str):
@@ -216,9 +238,36 @@ class CacheHandler(object):
         query = SELECTS['job-status']
 
         status = self.postgresDriver.execute_SELECT(query, jobID)
-        print(status)
 
         return status[0][0]
+
+    def add_node_to_job_rel(self,
+                            uuid: str,
+                            timestamp: int,
+                            jobID: str):
+        """
+
+        :param uuid:
+        :param timestamp:
+        :param jobID:
+        :return:
+        """
+
+        nodeInnerID = self._get_node_id(uuid, timestamp)
+        jobInnerID = self._get_job_id(jobID)
+
+        if self._node_clashes_with_job(
+            jobID=jobID,
+            innerNodeID=nodeInnerID
+        ):
+            return
+
+        query = INSERTS['node-to-job-rel']
+
+        self.postgresDriver.execute_INSERT(
+            query,
+            jobInnerID, nodeInnerID
+        )
 
     def add_node_results(self,
                      jobID: str,
@@ -228,7 +277,8 @@ class CacheHandler(object):
                      hideProb: float,
                      recommended: str,
                      ttl: int=None,
-                     override:bool=True):
+                     override:bool=True,
+                     classifiedbY:str='N/A'):
         """
 
         :param jobID:                   The job the node belongs to
@@ -240,13 +290,18 @@ class CacheHandler(object):
         :param ttl:                     Time-to-live for this cached value
         :param override:                Whether to override the cache entry if the node
                                     was already entered or not
+        :param classifiedbY:            The name of the classifier used by the node
 
         :return:                        True - if successful
                                         False - otherwise
         """
-        assert(recommended in ['SHOW', 'HIDE'])
+        assert(recommended in ['SHOW', 'HIDE'] or recommended is None)
+
+        self.postgresDriver.reset_connection()
 
         jobInnerID = self._get_job_id(jobID)
+
+        print(jobID)
 
         if jobInnerID is None:
             # The jobID is not valid!! Therefore, fail!
@@ -260,7 +315,8 @@ class CacheHandler(object):
             query = INSERTS['node-to-job-rel']
 
             try:
-                self.postgresDriver.execute_INSERT(query, (nodeInnerID, jobInnerID, ))
+                self.postgresDriver.execute_INSERT(query,
+                                                   jobInnerID, nodeInnerID)
             except:
                 # The insert failed, thus return False
                 return False
@@ -273,15 +329,18 @@ class CacheHandler(object):
 
             query = UPDATES['node-results']
 
+            self.postgresDriver.execute_UPDATE(
+                query,
+                showProb, hideProb, recommended, uuid, timestamp
+            )
+
             try:
-                self.postgresDriver.execute_UPDATE(
-                    query,
-                    (showProb, hideProb, None, uuid, timestamp, )
-                )
+
 
                 return True
             except:
                 # The update failed, so return False
+                print("Fails at update")
                 return False
 
         # If the node wasn't already in the database,
@@ -289,13 +348,16 @@ class CacheHandler(object):
 
         query = INSERTS['new-node']
 
+        print('trying to do the insert')
+
         self.postgresDriver.execute_INSERT(
             query,
-            uuid, timestamp, showProb, hideProb, recommended, 'test'
+            uuid, timestamp, showProb, hideProb, recommended, classifiedbY
         )
 
-        # Now getting the node ID
+        print('done the insert')
 
+        # Now getting the node ID
         nodeInnerID = self._get_node_id(uuid=uuid, timestamp=timestamp)
 
         query = INSERTS['node-to-job-rel']
@@ -317,6 +379,7 @@ class CacheHandler(object):
 
         :param uuid:            The uuid of the node in question.
         :param timestamp:       The timestamp of the node in question.
+
         :return:                True - if the cache is still valid
                                 False - otherwise
         """
@@ -328,7 +391,7 @@ class CacheHandler(object):
             uuid, timestamp
         )
 
-        if len(status) == 0:
+        if status is None or len(status) == 0:
             # The node is not in the database
             return False
         else:
@@ -354,3 +417,41 @@ class CacheHandler(object):
         )
 
         return results
+
+    def get_nodes_for_job(self,
+                          jobID: str) -> dict:
+        """
+
+        :param jobID:        The id of the job we extract the classification results for
+        :return:             A dictionary with the following format:
+
+                                {
+                                    'status': <one of DONE, RUNNING or WAITING>
+                                }
+
+        """
+
+        query = SELECTS['nodes-for-job']
+
+        results = self.postgresDriver.execute_SELECT(
+            query,
+            jobID
+        )
+
+        status = self.get_job_status(jobID)
+
+        final_results = dict()
+        final_results['status'] = status
+        final_results['results'] = list()
+
+        for result in results:
+            final_results['results'].append({
+                'uuid': result[0],
+                'timestamp': result[1],
+                'showProb': result[3],
+                'hideProb': result[4],
+                'recommended': result[5],
+                'classifiedBy': result[6]
+            })
+
+        return final_results

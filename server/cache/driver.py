@@ -48,6 +48,8 @@ class PostgresDriver(object):
                 password=password,
                 port=port
             )
+            self.conn.autocommit = True
+
         except driver.OperationalError or driver.DatabaseError:
             raise PostgresDriverConnectionException(
                 url="%s:%d" % (host, port),
@@ -128,7 +130,6 @@ class PostgresDriver(object):
             self._execute_query(DATABASE_SETUP[table])
             print("Created the %s table" % table)
 
-
     def execute_SELECT(self,
                        query,
                        *args):
@@ -141,13 +142,16 @@ class PostgresDriver(object):
         """
 
         results = None
-
-        with self.conn.cursor() as cur:
-            cur.execute(query, args)
-            results = cur.fetchall()
-            cur.close()
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(query, args)
+                results = cur.fetchall()
+                cur.close()
+        except:
+            self.reset_connection()
 
         return results
+
 
     def execute_INSERT(self,
                        query,
@@ -159,10 +163,13 @@ class PostgresDriver(object):
         :param args:       The arguments for the wildcards in the query
         :return:           -
         """
-        with self.conn.cursor() as cur:
-            cur.execute(query, args)
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(query, args)
+                cur.close()
             self.conn.commit()
-            cur.close()
+        except:
+            self.reset_connection()
 
     def execute_UPDATE(self,
                        query,
@@ -173,10 +180,17 @@ class PostgresDriver(object):
         :param args:
         :return:
         """
-        with self.conn.cursor() as cur:
-            cur.execute(query, *args)
-            self.conn.commit()
-            cur.close()
+
+        self.reset_connection()
+
+        cursor = self.conn.cursor()
+
+        full_query = query % args
+
+        cursor.execute(full_query)
+
+        self.conn.commit()
+        cursor.close()
 
     def renew_connection(self,
                          newHost: str,
@@ -225,7 +239,8 @@ class PostgresDriver(object):
                         False - otherwise
         """
         newConn = self._get_new_connection(
-            newURL=self.url,
+            newHost=self.host,
+            newPort=self.port,
             newDbName=self.dbName,
             newUser=self.user,
             newPass=self.password
@@ -250,3 +265,17 @@ class PostgresDriver(object):
         :return:
         """
         self.close()
+
+    def execute_DELETE(self,
+                       query,
+                       *args):
+        """
+            Method used to execute a DELETE from the PostgreSQL database
+
+        :param query:       The query to be run
+        :param args:        Any additional arguments required for the query
+
+        :return:            -
+        """
+
+        
