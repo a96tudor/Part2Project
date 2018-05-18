@@ -17,8 +17,8 @@ limitations under the License.
 
 """
 from flask.views import View
-from flask import request, Response
-from server.utils import *
+from flask import request, Response, jsonify
+from server import utils
 from server.jobs import JobsHandler
 
 
@@ -44,7 +44,7 @@ class ClassifyView(View):
                     ]
                 }
 
-        It returns a JSON with the following format:
+        If successful, returns a JSON with the following format:
                 {
                     'jobID': <The ID of the job initiated>,
                     'model': <The machine learning model used to classify the nodes>,
@@ -95,7 +95,8 @@ class ClassifyView(View):
         :param nodes:       The nodes for the nodes to process
         :return:            The ID of the new job
         """
-        jobID = jobsHandler.add_job(nodes)
+        jobID = utils.jobsHandler.add_job(nodes)
+
         return jobID
 
     def dispatch_request(self):
@@ -107,91 +108,35 @@ class ClassifyView(View):
                 response=msg
             )
 
-        if not isinstance(jobsHandler, JobsHandler):
+        if not isinstance(utils.jobsHandler, JobsHandler):
             return Response(
                 status=500,
                 response='Internal error'
             )
 
-        self.generate_job(request.json)
+        response = dict()
 
-        return Response(200)
+        try:
+            id = utils.jobsHandler.add_job(request.json['nodes'])
 
-
-class Neo4JConnectView(View):
-    """
-        View handling the neo4j connection entry point to the API. It can be used by the client
-        to change the database used in classification.
-
-        Path: /db-connect
-        Methods: PUT
-
-        It expects the following JSON as data:
-            {
-                ‘host’:  <the ip/ url of the database’s host>,
-			    ‘port’: <port # where to connect to the database>,
-			    ‘user’: <username used to connect to the database>,
-			    ‘pass’: <password used to connect to the database>,
-			    'invalidate-cache': <True/ False - whether we have to invalidate the cache
-			                                       when connecting to a new database>,
-			    'forced': <True/ False - if set to True, then the API will force stop any
-			                            job working on the old database before resetting
-			                            the connection number>
-            }
-
-    """
-
-    methods = ['PUT']
-    keys = ['host', 'port', 'user', 'pass', 'invalidate-cache', 'forced']
-
-    def validate_input(self):
-        """
-            Method that validates the input to the view
-
-        :return:    True - if the input is valid
-                    False - otherwise
-        """
-        if request.method not in self.methods:
-            return False, 'Invalid method. Expected PUT, got %s' % request.method
-
-        if not request.is_json:
-            return False, 'Invalid data format. Expected JSON.'
-
-        data = request.json
-
-        if not isinstance(data, dict):
-            return False, 'Invalid data type inside JSON. Expected dict, got %s' % str(type(data))
-
-        for key in self.keys:
-            if key not in data:
-                return False, 'Invalid dictionary received. Key %s not found.' % key
-
-        return True, 'Success'
-
-    def dispatch_request(self):
-
-        sts, msg = self.validate_input()
-
-        if not sts:
-            return Response(
-                status=400,
-                response=msg
-            )
-
-        data = request.json
-
-        if jobsHandler.jobsRunning():
-            if not data['forced']:
+            if id is None:
                 return Response(
-                    status=400,
-                    response='ERROR: Job still working on the old database!'
+                    status=500,
+                    response='Maximum number of running jobs achieved'
                 )
-            else:
-                print("Stopping running jobs!")
 
-        # TODO: finish implementation
+            response['status'] = 'Success'
+            response['jobID'] = id
+            response['caching_active'] = True
+            response['nodes_to_process'] = len(request.json['nodes'])
 
-        return Response(200)
+            return jsonify(response)
+
+        except Exception:
+            return Response(
+                status=500,
+                response='Internal error'
+            )
 
 
 class JobActionView(View):
@@ -213,7 +158,6 @@ class JobActionView(View):
                 {
                     'id':                   <the job id>,
                     'status':               <the status of the job. One of: 'WAITING', 'RUNNING', 'DONE', 'STOPPED'>,
-                    'ran_for':              <how long the job ran for. in milliseconds>
                 }
 
             (2) action == 'results'
@@ -237,12 +181,6 @@ class JobActionView(View):
                             'recommended':  <SHOW/ HIDE>
                         }
                     ]
-                }
-
-            (3) action == 'stop'
-                {
-                    'id':                     <the job id>,
-                    'status':                 <the status of the job. in this case 'STOPPED'>
                 }
     """
 
@@ -284,23 +222,46 @@ class JobActionView(View):
                 response=msg
             )
 
-        # TODO: finish implementation here
+        args = request.args.to_dict()
+        id = args['id']
+        action = args['action']
 
-        return Response(200)
+        if action == 'status':
+            status = utils.cacheHandler.get_job_status(id)
+            if status is None:
+                return Response(
+                    status=400,
+                    response='Invalid job id'
+                )
+
+            data = {
+                'id': id,
+                'status': status
+            }
+
+            return jsonify(data)
+
+        else:
+            data = utils.cacheHandler.get_nodes_for_job(id)
+
+            if data is None:
+                return Response(
+                    status=400,
+                    response='Invalid job id'
+                )
+
+            return jsonify(data)
 
 
 class CacheResetView(View):
     """
         View class that handles requests that cause the cache database to be cleaned.
 
-        Path: /reset-cache?forced=<True/False>
-        Methods: PUT
+        Path: /reset-cache
+        Methods: GET
 
-        The 'forced' flag here is optional. By default, it will be set to False.
-        When set to True, it will forcibly delete any running jobs and then clears the cache.
-        Otherwise, it will return with HTTP code 400 (Invalid request) if there is a job running.
     """
-    methods = ['PUT']
+    methods = ['GET']
 
     def validate_input(self):
         """
@@ -336,6 +297,6 @@ class CacheResetView(View):
                 response=msg
             )
 
-        # TODO: finish implementation
+        utils.cacheHandler.clear_cache()
 
         return Response(200)

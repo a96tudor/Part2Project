@@ -70,13 +70,13 @@ class Model(object):
 
     @abc.abstractclassmethod
     def predict_class(self,
-                      data: np.ndarray) -> list:
+                      data: np.ndarray) -> np.ndarray:
 
         pass
 
     @abc.abstractclassmethod
     def predict_probs(self,
-                      data: np.ndarray) -> list:
+                      data: np.ndarray) -> np.ndarray:
 
         pass
 

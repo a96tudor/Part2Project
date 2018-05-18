@@ -10,18 +10,27 @@ class Config(object):
     CSRF_ENABLED = True
     SECRET = os.getenv('SECRET')
 
-    CACHE_DATABASE_HOST = 'http://127.0.0.1'
-    CACHE_DATABASE_PORT = 5432
-    CACHE_DATABASE_USER = 'tma33'
-    CACHE_DATABASE_PASS = 'opus'
-    CACHE_DATABASE_NAME = 'server-cache'
+    TTL = 259200
 
-    FEATURES_DATABASE_HOST = 'bolt://127.0.0.1'
-    FEATURES_DATABASE_PORT = 7687
-    FEATURES_DATABASE_USER = 'neo4j'
-    FEATURES_DATABASE_PASS = 'opus'
+    CACHE_CONN_DATA = {
+        'host': '127.0.0.1',
+        'port': 5432,
+        'user': 'tma33',
+        'password': 'password',
+        'dbName': 'server-cache'
+    }
 
-    MODEL = 'mlp'
+    NEO4J_CONN_DATA = {
+        'host': 'bolt://127.0.0.1',
+        'port': 7687,
+        'user': 'neo4j',
+        'password': 'opus'
+    }
+
+    MODEL = {
+        'name': 'pnn',
+        'checkpoint': 'models/checkpoints/pnn'
+    }
 
     views = [
         {
@@ -31,10 +40,6 @@ class Config(object):
         {
             'url': '/clear-cache',
             'class': CacheResetView
-        },
-        {
-            'url': '/db-connect',
-            'class': Neo4JConnectView
         },
         {
             'url': '/job-action',

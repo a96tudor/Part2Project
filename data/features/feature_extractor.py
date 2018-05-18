@@ -25,11 +25,15 @@ import numpy as np
 
 
 class FeatureExtractor(object):
+    """
+        Class representing a Feature Extractor. Main entry point
+        for the Neo4J interaction module
+    """
 
     def __init__(self,
                  nodes: list,
                  driver: AnotherDatabaseDriver,
-                 verbose: bool = True):
+                 verbose: bool = False):
         """
             CONSTRUCTOR
 
@@ -40,7 +44,8 @@ class FeatureExtractor(object):
                                     'timestamp': the timestamp of the node
                                 }
         :param driver:      The driver
-        :param verbose:     Set to 'True' if we want the extractor to give constant feedback and 'False' otherwise
+        :param verbose:     Set to 'True' if we want the extractor to give constant feedback and 'False' otherwise.
+                            Default True
         """
         # Asserting inputs
         for node in nodes:
@@ -628,7 +633,7 @@ class FeatureExtractor(object):
             Method that returns a list of the neighbouring nodes for each
             of the nodes provided
 
-        :return:
+        :return:    A list of neighbours for every node.
         """
         result = list()
         if self._verbose:

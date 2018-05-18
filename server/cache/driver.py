@@ -1,4 +1,6 @@
 """
+File containing the PostgreSQL Driver
+
 Part2Project -- driver.py
 
 Copyright Apr 2018 [Tudor Mihai Avram]
@@ -23,7 +25,7 @@ from exceptions.server.cache import *
 
 class PostgresDriver(object):
     """
-        Class representing the
+        Wrapper class handling PostgreSQL interaction
     """
     def __init__(self,
                  host,
@@ -33,11 +35,11 @@ class PostgresDriver(object):
                  password):
         """
 
-        :param host:
-        :param port:
-        :param dbName:
-        :param user:
-        :param password:
+        :param host:            The host to connect to
+        :param port:            The port # to connect to
+        :param dbName:          The name of the database to connect to
+        :param user:            The username to connect with
+        :param password:        The password to connect with
         """
 
         try:
@@ -48,6 +50,8 @@ class PostgresDriver(object):
                 password=password,
                 port=port
             )
+            self.conn.autocommit = True
+
         except driver.OperationalError or driver.DatabaseError:
             raise PostgresDriverConnectionException(
                 url="%s:%d" % (host, port),
@@ -121,13 +125,15 @@ class PostgresDriver(object):
     def setup_database(self):
         """
 
+            Method that creates the necessary tables for the
+            cache database to run.
+
         :return:
         """
         for table in DATABASE_SETUP:
 
             self._execute_query(DATABASE_SETUP[table])
             print("Created the %s table" % table)
-
 
     def execute_SELECT(self,
                        query,
@@ -141,13 +147,16 @@ class PostgresDriver(object):
         """
 
         results = None
-
-        with self.conn.cursor() as cur:
-            cur.execute(query, args)
-            results = cur.fetchall()
-            cur.close()
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(query, args)
+                results = cur.fetchall()
+                cur.close()
+        except:
+            self.reset_connection()
 
         return results
+
 
     def execute_INSERT(self,
                        query,
@@ -159,24 +168,36 @@ class PostgresDriver(object):
         :param args:       The arguments for the wildcards in the query
         :return:           -
         """
-        with self.conn.cursor() as cur:
-            cur.execute(query, args)
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(query, args)
+                cur.close()
             self.conn.commit()
-            cur.close()
+        except:
+            self.reset_connection()
 
     def execute_UPDATE(self,
                        query,
                        *args):
         """
 
-        :param query:
-        :param args:
-        :return:
+            Method executing UPDATE queries
+
+        :param query:       The query to be executed
+        :param args:        Other potential arguments for running the query
+        :return:            -
         """
-        with self.conn.cursor() as cur:
-            cur.execute(query, *args)
-            self.conn.commit()
-            cur.close()
+
+        self.reset_connection()
+
+        cursor = self.conn.cursor()
+
+        full_query = query % args
+
+        cursor.execute(full_query)
+
+        self.conn.commit()
+        cursor.close()
 
     def renew_connection(self,
                          newHost: str,
@@ -225,7 +246,8 @@ class PostgresDriver(object):
                         False - otherwise
         """
         newConn = self._get_new_connection(
-            newURL=self.url,
+            newHost=self.host,
+            newPort=self.port,
             newDbName=self.dbName,
             newUser=self.user,
             newPass=self.password
@@ -250,3 +272,22 @@ class PostgresDriver(object):
         :return:
         """
         self.close()
+
+    def execute_DELETE(self,
+                       query,
+                       *args):
+        """
+            Method used to execute a DELETE from the PostgreSQL database
+
+        :param query:       The query to be run
+        :param args:        Any additional arguments required for the query
+
+        :return:            -
+        """
+
+        cursor = self.conn.cursor()
+
+        cursor.execute(query, args)
+
+        self.conn.commit()
+        cursor.close()

@@ -33,13 +33,13 @@ _ACCEPTED_MODELS = {
     'cnn': ConvolutionalNeuralNetwork,
     'pnn': ProbabilisticNeuralNetwork,
     'mlp': MultilayerPerceptron,
-    'logreg': LogisticRegression,
-    'gat': GraphAttentionNetwork
+    'logreg': LogisticRegression
 }
 
 
 def get_model(name: str,
-              config: ModelConfig) -> Model:
+              config: ModelConfig,
+              checkpoint: str) -> Model:
     """
         Method that initiates and sets up a model, based on
         the model name and the configuration
@@ -56,6 +56,8 @@ def get_model(name: str,
     model = _ACCEPTED_MODELS[name](config)
 
     model.setup(input_dim=config.INPUT_DIM)
+
+    model.load_checkpoint(path=checkpoint)
 
     return model
 
